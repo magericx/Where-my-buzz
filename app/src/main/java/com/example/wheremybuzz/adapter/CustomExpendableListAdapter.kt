@@ -26,11 +26,10 @@ class CustomExpandableListAdapter(
         return expandedListPosition.toLong()
     }
 
-    @SuppressLint("InflateParams")
     override fun getChildView(
         listPosition: Int, expandedListPosition: Int,
-        isLastChild: Boolean, convertView: View, parent: ViewGroup
-    ): View {
+        isLastChild: Boolean, convertView: View?, parent: ViewGroup
+    ): View? {
         var convertView = convertView
         val expandedListText =
             getChild(listPosition, expandedListPosition) as String
@@ -40,7 +39,7 @@ class CustomExpandableListAdapter(
             convertView = layoutInflater.inflate(R.layout.list_item, null)
         }
         val expandedListTextView = convertView
-            .findViewById<View>(R.id.expandedListItem) as TextView
+            ?.findViewById<View>(R.id.expandedListItem) as TextView
         expandedListTextView.text = expandedListText
         return convertView
     }
@@ -61,10 +60,9 @@ class CustomExpandableListAdapter(
         return listPosition.toLong()
     }
 
-    @SuppressLint("InflateParams")
     override fun getGroupView(
         listPosition: Int, isExpanded: Boolean,
-        convertView: View, parent: ViewGroup
+        convertView: View?, parent: ViewGroup
     ): View {
         var convertView = convertView
         val listTitle = getGroup(listPosition) as String
@@ -74,7 +72,7 @@ class CustomExpandableListAdapter(
             convertView = layoutInflater.inflate(R.layout.list_group, null)
         }
         val listTitleTextView = convertView
-            .findViewById<View>(R.id.listTitle) as TextView
+            ?.findViewById<View>(R.id.listTitle) as TextView
         listTitleTextView.setTypeface(null, Typeface.BOLD)
         listTitleTextView.text = listTitle
         return convertView
