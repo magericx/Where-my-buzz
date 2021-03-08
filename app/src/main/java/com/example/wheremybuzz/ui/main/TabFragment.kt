@@ -2,6 +2,7 @@ package com.example.wheremybuzz.ui.main
 
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,11 +11,14 @@ import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.api.NearestBusStopApiService
 import com.example.wheremybuzz.data.ExpandableListDataPump.data
 import com.example.wheremybuzz.model.NearestBusStopsResponse
+import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -24,11 +28,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class TabFragment : Fragment() {
     var position = 0
+    val TAG: String = "TabFragment"
 
     var expandableListView: ExpandableListView? = null
     var expandableListAdapter: ExpandableListAdapter? = null
     var expandableListTitle: List<String>? = null
     var expandableListDetail: HashMap<String, List<String>>? = null
+    var viewModel: NearestBusStopsViewModel? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         position = arguments!!.getInt("pos")
@@ -42,7 +48,16 @@ class TabFragment : Fragment() {
                     expandableListDetail!!
                 )
         }
+
         //getNearestBusStopsData()
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        viewModel = ViewModelProviders.of(requireActivity()).get(
+            NearestBusStopsViewModel::class.java
+        )
+        observeViewModel(viewModel!!)
     }
 
     override fun onCreateView(
@@ -61,12 +76,13 @@ class TabFragment : Fragment() {
 
         expandableListView!!.setAdapter(expandableListAdapter)
         expandableListView!!.setOnGroupExpandListener { groupPosition ->
-            Toast.makeText(
-                activity!!.getApplicationContext(),
-                (expandableListTitle as ArrayList<String>).get(groupPosition) + " List Expanded.",
-                Toast.LENGTH_SHORT
-            ).show()
-            getNearestBusStopsData()
+//            Toast.makeText(
+//                activity!!.getApplicationContext(),
+//                (expandableListTitle as ArrayList<String>).get(groupPosition) + " List Expanded.",
+//                Toast.LENGTH_SHORT
+//            ).show()
+            //getNearestBusStopsData()
+            viewModel?.setProjectListObservable()
         }
 
         expandableListView!!.setOnGroupCollapseListener { groupPosition ->
@@ -90,7 +106,25 @@ class TabFragment : Fragment() {
         }
     }
 
-    internal fun getNearestBusStopsData() {
+    private fun observeViewModel(viewModel: NearestBusStopsViewModel) {
+        // Update the list when the data changes
+        viewModel.getProjectListObservable()
+            ?.observe(viewLifecycleOwner,
+                Observer<List<NearestBusStopsResponse?>?> { projects ->
+                    Log.d(TAG,"API result is " + projects)
+                    if (projects != null) {
+                        Toast.makeText(
+                            activity!!.getApplicationContext(), "API result is ${projects}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.d(TAG,"API result is " + projects)
+                        //…
+                        //projectAdapter.setProjectList(projects)
+                    }
+                })
+    }
+
+    private fun getNearestBusStopsData() {
         val ai = context!!.packageManager
             .getApplicationInfo(context!!.packageName, PackageManager.GET_META_DATA)
         val google_api_key: String = ai.metaData["com.google.android.geo.API_KEY"] as String
@@ -106,15 +140,14 @@ class TabFragment : Fragment() {
                 call: Call<NearestBusStopsResponse>,
                 response: Response<NearestBusStopsResponse>
             ) {
-                println("Status code is ${response.code()}")
-                println("Content is ${response.body()}")
-
+                Log.d(TAG, "Status code is ${response.code()}")
+                Log.d(TAG, "Content is ${response.body()}")
                 if (response.code() == 200) {
-                    val weatherResponse = response.body()!!
+                    val nearestBusStopsResponse = response.body()!!
 
                     //currently hardcoded, needs to be changed
                     val stringBuilder = "Country: " +
-                            weatherResponse.results +
+                            nearestBusStopsResponse.results +
                             "\n" +
                             "Temperature: " + ""
 
@@ -122,8 +155,7 @@ class TabFragment : Fragment() {
                         activity!!.getApplicationContext(), "API result is $stringBuilder",
                         Toast.LENGTH_SHORT
                     ).show()
-                }
-                else{
+                } else {
                     Toast.makeText(
                         activity!!.getApplicationContext(), "API result is ${response.code()}",
                         Toast.LENGTH_SHORT
@@ -145,6 +177,7 @@ class TabFragment : Fragment() {
         val location: String = "1.380308, 103.741256"
         val radius: Int = 100
         val type: String = "transit_station"
+
         //val key: String = "AIzaSyCoaNTRExEFYU_QOYcyrKhcbPEGGBPsFUU"
         fun getInstance(position: Int): Fragment {
             val bundle = Bundle()
