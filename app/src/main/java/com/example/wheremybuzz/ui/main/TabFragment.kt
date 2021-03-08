@@ -12,8 +12,9 @@ import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import com.example.wheremybuzz.R
+import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.api.NearestBusStopApiService
 import com.example.wheremybuzz.data.ExpandableListDataPump.data
@@ -54,7 +55,7 @@ class TabFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProviders.of(requireActivity()).get(
+        viewModel = ViewModelProvider(requireActivity(),ViewModelFactory(activity!!.application)).get(
             NearestBusStopsViewModel::class.java
         )
         observeViewModel(viewModel!!)
@@ -110,11 +111,11 @@ class TabFragment : Fragment() {
         // Update the list when the data changes
         viewModel.getProjectListObservable()
             ?.observe(viewLifecycleOwner,
-                Observer<List<NearestBusStopsResponse?>?> { projects ->
+                Observer<List<NearestBusStopsResponse>> { projects ->
                     Log.d(TAG,"API result is " + projects)
                     if (projects != null) {
                         Toast.makeText(
-                            activity!!.getApplicationContext(), "API result is ${projects}",
+                            activity!!.applicationContext, "API result is ${projects}",
                             Toast.LENGTH_SHORT
                         ).show()
                         Log.d(TAG,"API result is " + projects)

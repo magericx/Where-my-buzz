@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.api.NearestBusStopApiService
 import com.example.wheremybuzz.model.NearestBusStopsResponse
-import com.example.wheremybuzz.ui.main.TabFragment
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -51,7 +51,7 @@ class NearestBusRepository {
                             nearestBusStopsResponse.results +
                             "\n" +
                             "Temperature: " + ""
-                    data.value = listOf(response.body());
+                    data.postValue(listOf(response.body()))
                 }
             }
 
@@ -62,10 +62,7 @@ class NearestBusRepository {
     }
 
 
-
-
-
-        //fix this later using dagger injection https://stackoverflow.com/questions/45840793/repository-module-implementation-with-context
+    //fix this later using dagger injection https://stackoverflow.com/questions/45840793/repository-module-implementation-with-context
 //        val ai = context!!.packageManager
 //            .getApplicationInfo(context!!.packageName, PackageManager.GET_META_DATA)
 //        val google_api_key: String = ai.metaData["com.google.android.geo.API_KEY"] as String
