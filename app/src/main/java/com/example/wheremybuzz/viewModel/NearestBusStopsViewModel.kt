@@ -22,15 +22,11 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         mRepository = NearestBusRepository()
     }
 
-    fun setProjectListObservable(){
-        projectListObservable = mRepository!!.getNearestBusStops()
-        //Log.d(TAG,"print projectListObservable" + mRepository!!.getNearestBusStops()?.value?.get(0)?.results)
-    }
     /**
      * Expose the LiveData Projects query so the UI can observe it.
      */
     fun getProjectListObservable(): LiveData<List<NearestBusStopsResponse>>? {
-        Log.d(TAG,"print projectListObservable")
+        projectListObservable = mRepository!!.getNearestBusStops()
         return projectListObservable
     }
 }

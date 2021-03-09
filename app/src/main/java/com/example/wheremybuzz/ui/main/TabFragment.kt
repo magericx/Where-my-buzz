@@ -58,7 +58,7 @@ class TabFragment : Fragment() {
         viewModel = ViewModelProvider(requireActivity(),ViewModelFactory(activity!!.application)).get(
             NearestBusStopsViewModel::class.java
         )
-        observeViewModel(viewModel!!)
+        //observeViewModel(viewModel!!)
     }
 
     override fun onCreateView(
@@ -82,8 +82,7 @@ class TabFragment : Fragment() {
 //                (expandableListTitle as ArrayList<String>).get(groupPosition) + " List Expanded.",
 //                Toast.LENGTH_SHORT
 //            ).show()
-            //getNearestBusStopsData()
-            viewModel?.setProjectListObservable()
+            observeViewModel(viewModel!!)
         }
 
         expandableListView!!.setOnGroupCollapseListener { groupPosition ->
@@ -112,15 +111,12 @@ class TabFragment : Fragment() {
         viewModel.getProjectListObservable()
             ?.observe(viewLifecycleOwner,
                 Observer<List<NearestBusStopsResponse>> { projects ->
-                    Log.d(TAG,"API result is " + projects)
                     if (projects != null) {
                         Toast.makeText(
                             activity!!.applicationContext, "API result is ${projects}",
                             Toast.LENGTH_SHORT
                         ).show()
                         Log.d(TAG,"API result is " + projects)
-                        //…
-                        //projectAdapter.setProjectList(projects)
                     }
                 })
     }
