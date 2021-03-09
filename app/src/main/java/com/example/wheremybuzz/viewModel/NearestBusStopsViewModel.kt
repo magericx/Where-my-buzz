@@ -11,7 +11,8 @@ import com.example.wheremybuzz.repository.NearestBusRepository
 
 
 class NearestBusStopsViewModel(application: Application) : AndroidViewModel(application) {
-    private var projectListObservable: LiveData<List<NearestBusStopsResponse>>? = null
+    private var nearestBusStopsListObservable: LiveData<List<NearestBusStopsResponse>>? = null
+    private var nearestBusStopsGeoListObservable: LiveData<String>? = null
     private val TAG ="NearestBusStopsView"
 
     var mRepository: NearestBusRepository? = null
@@ -25,8 +26,14 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     /**
      * Expose the LiveData Projects query so the UI can observe it.
      */
-    fun getProjectListObservable(): LiveData<List<NearestBusStopsResponse>>? {
-        projectListObservable = mRepository!!.getNearestBusStops()
-        return projectListObservable
+//    fun getNearestBusStopsListObservable(): LiveData<List<NearestBusStopsResponse>>? {
+//        nearestBusStopsListObservable = mRepository!!.getNearestBusStops()
+//        return nearestBusStopsListObservable
+//    }
+
+    fun getNearestBusStopsGeoListObservable(): LiveData<String>? {
+        nearestBusStopsGeoListObservable = mRepository!!.getNearestBusStops()
+        return nearestBusStopsGeoListObservable
     }
+
 }
