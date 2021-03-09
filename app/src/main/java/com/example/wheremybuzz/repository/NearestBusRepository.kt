@@ -1,8 +1,12 @@
 package com.example.wheremybuzz.repository
 
+import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.api.NearestBusStopApiService
 import com.example.wheremybuzz.model.NearestBusStopsResponse
 import okhttp3.ResponseBody
@@ -13,18 +17,20 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 
 class NearestBusRepository {
-    //private val nearestBusStopApiService: NearestBusStopApiService? = null
     private val TAG: String = "NearestBusRepository"
-    val baseUrl: String = "https://maps.googleapis.com"
-    val location: String = "1.380308, 103.741256"
-    val radius: Int = 100
-    val type: String = "transit_station"
-    val google_api_key = "AIzaSyCoaNTRExEFYU_QOYcyrKhcbPEGGBPsFUU"
+    private val baseUrl: String = "https://maps.googleapis.com"
+    private val location: String = "1.380308, 103.741256"
+    private val radius: Int = 100
+    private val type: String = "transit_station"
+    private val context: Context = MyApplication.instance.applicationContext
+    private val ai: ApplicationInfo = context.packageManager
+        .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+    private val googleApiKey: String = ai.metaData["com.google.android.geo.API_KEY"] as String
 
     fun getNearestBusStops(): LiveData<List<NearestBusStopsResponse>>? {
         val data: MutableLiveData<List<NearestBusStopsResponse>> =
             MutableLiveData()
-
+        
         val retrofit = Retrofit.Builder()
             .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
@@ -33,7 +39,7 @@ class NearestBusRepository {
         val call = service.getNearestBusStops(
             location,
             radius,
-            type, google_api_key
+            type, googleApiKey
         )
 
         call.enqueue(object : retrofit2.Callback<NearestBusStopsResponse> {
