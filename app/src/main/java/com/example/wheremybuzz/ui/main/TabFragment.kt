@@ -1,6 +1,6 @@
 package com.example.wheremybuzz.ui.main
 
-import android.content.pm.PackageManager
+//import com.example.wheremybuzz.data.ExpandableListDataPump.data
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -16,15 +16,9 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
-import com.example.wheremybuzz.api.NearestBusStopApiService
-import com.example.wheremybuzz.data.ExpandableListDataPump.data
-import com.example.wheremybuzz.model.NearestBusStopsResponse
+import com.example.wheremybuzz.model.BusStopMeta
+import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 
 class TabFragment : Fragment() {
@@ -39,25 +33,16 @@ class TabFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         position = arguments!!.getInt("pos")
-        if (position == 0) {
-            expandableListDetail = data
-            expandableListTitle = ArrayList<String>(expandableListDetail!!.keys)
-            expandableListAdapter =
-                CustomExpandableListAdapter(
-                    activity!!.applicationContext,
-                    expandableListTitle!!,
-                    expandableListDetail!!
-                )
-        }
-
         //getNearestBusStopsData()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProvider(requireActivity(),ViewModelFactory(activity!!.application)).get(
-            NearestBusStopsViewModel::class.java
-        )
+        viewModel =
+            ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
+                NearestBusStopsViewModel::class.java
+            )
+        observeViewModel()
     }
 
     override fun onCreateView(
@@ -74,14 +59,13 @@ class TabFragment : Fragment() {
         //textView = view.findViewById<View>(R.id.textView) as TextView
         //textView!!.text = "Fragment " + (position + 1)
 
-        expandableListView!!.setAdapter(expandableListAdapter)
+        //expandableListView!!.setAdapter(expandableListAdapter)
         expandableListView!!.setOnGroupExpandListener { groupPosition ->
-//            Toast.makeText(
-//                activity!!.getApplicationContext(),
-//                (expandableListTitle as ArrayList<String>).get(groupPosition) + " List Expanded.",
-//                Toast.LENGTH_SHORT
-//            ).show()
-            observeViewModel(viewModel!!)
+            Toast.makeText(
+                activity!!.getApplicationContext(),
+                (expandableListTitle as ArrayList<String>).get(groupPosition) + " List Expanded.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         expandableListView!!.setOnGroupCollapseListener { groupPosition ->
@@ -95,7 +79,7 @@ class TabFragment : Fragment() {
         expandableListView!!.setOnChildClickListener { parent, v, groupPosition, childPosition, id ->
             Toast.makeText(
                 activity!!.getApplicationContext(),
-                (expandableListTitle as ArrayList<String>).get(groupPosition) + " -> "
+                (expandableListTitle as ArrayList<String>)[groupPosition] + " -> "
                         + expandableListDetail!![(expandableListTitle as ArrayList<String>).get(
                     groupPosition
                 )]!![childPosition],
@@ -105,35 +89,78 @@ class TabFragment : Fragment() {
         }
     }
 
-//    private fun observeViewModel(viewModel: NearestBusStopsViewModel) {
-//        // Update the list when the data changes
-//        viewModel.getNearestBusStopsListObservable()
-//            ?.observe(viewLifecycleOwner,
-//                Observer<List<NearestBusStopsResponse>> { projects ->
-//                    if (projects != null) {
-//                        Toast.makeText(
-//                            activity!!.applicationContext, "API result is ${projects}",
-//                            Toast.LENGTH_SHORT
-//                        ).show()
-//                        Log.d(TAG,"API result is " + projects)
-//                    }
-//                })
-//    }
-
-    private fun observeViewModel(viewModel: NearestBusStopsViewModel) {
-        // Update the list when the data changes
-        viewModel.getNearestBusStopsGeoListObservable()
-            ?.observe(viewLifecycleOwner,
-                Observer<String> { geoLocation ->
-                    if (geoLocation != null) {
-                        Toast.makeText(
-                            activity!!.applicationContext, "API result is $geoLocation",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        Log.d(TAG, "API result is $geoLocation")
-                    }
-                })
+    private fun createBusStopNameHeader(nearestBusStopMetaList: BusStopMeta) {
+        if (position == 0) {
+            Log.d(TAG, "Create header here")
+            //amend here to push out the header
+            if (!nearestBusStopMetaList.BusStopMetaList.isNullOrEmpty()) {
+                val nearestBusStopsList = nearestBusStopMetaList.BusStopMetaList
+                for (i in nearestBusStopMetaList.BusStopMetaList.indices) {
+                    val busStopArrayList: MutableList<String> = ArrayList()
+                    viewModel?.setExpandableListDetail(
+                        nearestBusStopsList[i]!!.busStopName,
+                        busStopArrayList
+                    )
+                }
+                expandableListDetail = viewModel?.getExpandableListDetail()
+                expandableListTitle = ArrayList<String>(expandableListDetail!!.keys)
+                expandableListAdapter =
+                    CustomExpandableListAdapter(
+                        activity!!.applicationContext,
+                        expandableListTitle!!,
+                        expandableListDetail!!
+                    )
+                expandableListView!!.setAdapter(expandableListAdapter)
+            }
+        }
     }
+
+    private fun observeViewModel() {
+        if (position == 0) {
+            Log.d(TAG, "Call nearest bus stop API ")
+            // Update the list when the data changes
+            viewModel?.getNearestBusStopsGeoListObservable(location)
+                ?.observe(viewLifecycleOwner,
+                    Observer<BusStopMeta> { nearestBusStopMeta ->
+                        if (nearestBusStopMeta != null) {
+                            Toast.makeText(
+                                activity!!.applicationContext, "Update headers on page",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            createBusStopNameHeader(nearestBusStopMeta)
+                            observeBusStopCodeViewModel("test",0.0,0.0)
+                            Log.d(
+                                TAG,
+                                "getNearestBusStopsGeoListObservable API result is $nearestBusStopMeta"
+                            )
+                        }
+                    })
+        }
+    }
+
+    private fun observeBusStopCodeViewModel(
+        busStopName: String,
+        latitude: Double,
+        longtitude: Double
+    ) {
+        if (position == 0) {
+            Log.d(TAG, "Call nearest bus stop API ")
+            // Update the list when the data changes
+            viewModel?.getBusStopCodeListObservable(busStopName, latitude, longtitude)
+                ?.observe(viewLifecycleOwner,
+                    Observer<BusStopsCodeResponse> { nearestBusStopMeta ->
+                        if (nearestBusStopMeta != null) {
+                            Toast.makeText(
+                                activity!!.applicationContext, "Retrieved bus stop code",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            //createBusStopNameHeader(nearestBusStopMeta)
+                            Log.d(TAG, "API result is $nearestBusStopMeta")
+                        }
+                    })
+        }
+    }
+
 
     companion object {
         fun getInstance(position: Int): Fragment {
@@ -143,5 +170,7 @@ class TabFragment : Fragment() {
             tabFragment.setArguments(bundle)
             return tabFragment
         }
+
+        private val location: String = "1.380308, 103.741256"
     }
 }

@@ -14,7 +14,7 @@ data class Result(
     val photos: List<Photo>,
     val place_id: String,
     val plus_code: PlusCode,
-    val rating: Int,
+    val rating: Double,
     val reference: String,
     val scope: String,
     val types: List<String>,
