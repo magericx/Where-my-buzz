@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import com.example.wheremybuzz.model.BusStopMeta
 import com.example.wheremybuzz.model.BusStopsCodeResponse
+import com.example.wheremybuzz.model.InnerBusStopMeta
 import com.example.wheremybuzz.model.NearestBusStopsResponse
 import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
@@ -16,7 +17,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     private var nearestBusStopsGeoListObservable: LiveData<BusStopMeta>? = null
     private var busStopCodeListObservable: LiveData<BusStopsCodeResponse>? = null
     private val TAG = "NearestBusStopsView"
-    private var expandableListDetail: HashMap<String, List<String>>
+    private var expandableListDetail: HashMap<String, List<InnerBusStopMeta>>
 
     var nearestBusRepository: NearestBusRepository? = null
     var busStopCodeRepository: BusStopCodeRepository? = null
@@ -29,11 +30,11 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         expandableListDetail = HashMap()
     }
 
-    fun getExpandableListDetail(): HashMap<String, List<String>> {
+    fun getExpandableListDetail(): HashMap<String, List<InnerBusStopMeta>> {
         return expandableListDetail
     }
 
-    fun setExpandableListDetail(key: String, list: MutableList<String>) {
+    fun setExpandableListDetail(key: String, list: List<InnerBusStopMeta>) {
         expandableListDetail[key] = list
     }
 

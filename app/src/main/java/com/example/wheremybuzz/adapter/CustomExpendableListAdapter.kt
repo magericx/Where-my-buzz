@@ -10,14 +10,15 @@ import android.view.ViewGroup
 import android.widget.BaseExpandableListAdapter
 import android.widget.TextView
 import com.example.wheremybuzz.R
+import com.example.wheremybuzz.model.InnerBusStopMeta
 import java.util.*
 
 
 class CustomExpandableListAdapter(
     private val context: Context, private val expandableListTitle: List<String>,
-    private val expandableListDetail: HashMap<String, List<String>>
+    private val expandableListDetail: HashMap<String, List<InnerBusStopMeta>>
 ) : BaseExpandableListAdapter() {
-    override fun getChild(listPosition: Int, expandedListPosition: Int): String? {
+    override fun getChild(listPosition: Int, expandedListPosition: Int): InnerBusStopMeta? {
         return expandableListDetail[expandableListTitle[listPosition]]
             ?.get(expandedListPosition)
     }

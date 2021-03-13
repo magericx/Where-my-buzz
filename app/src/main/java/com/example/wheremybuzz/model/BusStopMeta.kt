@@ -7,5 +7,6 @@ data class BusStopMeta(
 data class InnerBusStopMeta(
     val busStopName: String,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    val busStopCode: Long
 )

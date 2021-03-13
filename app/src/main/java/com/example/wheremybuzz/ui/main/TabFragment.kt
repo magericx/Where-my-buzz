@@ -18,6 +18,7 @@ import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.BusStopMeta
 import com.example.wheremybuzz.model.BusStopsCodeResponse
+import com.example.wheremybuzz.model.InnerBusStopMeta
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 
 
@@ -28,7 +29,7 @@ class TabFragment : Fragment() {
     var expandableListView: ExpandableListView? = null
     var expandableListAdapter: ExpandableListAdapter? = null
     var expandableListTitle: List<String>? = null
-    var expandableListDetail: HashMap<String, List<String>>? = null
+    var expandableListDetail: HashMap<String, List<InnerBusStopMeta>>? = null
     var viewModel: NearestBusStopsViewModel? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,9 +64,10 @@ class TabFragment : Fragment() {
         expandableListView!!.setOnGroupExpandListener { groupPosition ->
             Toast.makeText(
                 activity!!.getApplicationContext(),
-                (expandableListTitle as ArrayList<String>).get(groupPosition) + " List Expanded.",
+                (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
                 Toast.LENGTH_SHORT
             ).show()
+            observeBusStopCodeViewModel((expandableListTitle as ArrayList<String>)[groupPosition],0.0,0.0)
         }
 
         expandableListView!!.setOnGroupCollapseListener { groupPosition ->
@@ -96,7 +98,7 @@ class TabFragment : Fragment() {
             if (!nearestBusStopMetaList.BusStopMetaList.isNullOrEmpty()) {
                 val nearestBusStopsList = nearestBusStopMetaList.BusStopMetaList
                 for (i in nearestBusStopMetaList.BusStopMetaList.indices) {
-                    val busStopArrayList: MutableList<String> = ArrayList()
+                    val busStopArrayList: MutableList<InnerBusStopMeta> = ArrayList()
                     viewModel?.setExpandableListDetail(
                         nearestBusStopsList[i]!!.busStopName,
                         busStopArrayList
@@ -128,7 +130,6 @@ class TabFragment : Fragment() {
                                 Toast.LENGTH_SHORT
                             ).show()
                             createBusStopNameHeader(nearestBusStopMeta)
-                            observeBusStopCodeViewModel("test",0.0,0.0)
                             Log.d(
                                 TAG,
                                 "getNearestBusStopsGeoListObservable API result is $nearestBusStopMeta"

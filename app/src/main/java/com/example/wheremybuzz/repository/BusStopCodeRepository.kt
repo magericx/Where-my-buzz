@@ -33,7 +33,7 @@ class BusStopCodeRepository {
         clientBuilder.addInterceptor(loggingInterceptor)
         return Retrofit.Builder()
             .baseUrl(baseUrl)
-            .client(clientBuilder.build())
+            //.client(clientBuilder.build())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -60,8 +60,17 @@ class BusStopCodeRepository {
             ) {
                 Log.d(TAG, "Status code is ${response.code()}")
                 Log.d(TAG, "Content is ${response.body()}")
+                Log.d(TAG,"Provided latitude is " + latitude)
+                Log.d(TAG,"Provided longtitude is " + longtitude)
+
                 if (response.code() == 200) {
-                    val nearestBusStopsResponse = response.body()
+                    val busStopCodeResponse = response.body().value
+                    if (!busStopCodeResponse.isNullOrEmpty()){
+                        for (i in busStopCodeResponse.indices){
+                            //add internal logic to check and iterate
+                            //Log.d(TAG,"Bus stop code is " + busStopCodeResponse[i].BusStopCode + " for bus stop " + busStopName)
+                        }
+                    }
                     //data.postValue(busStopMeta)
                 } else {
                     Log.d(TAG, "Status code is " + response.code())

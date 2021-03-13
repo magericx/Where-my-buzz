@@ -75,7 +75,7 @@ class NearestBusRepository {
                             nearestBusStopsResponse.results[i].geometry.location.lng
                         ).toDouble()
                         innerBusStopMeta =
-                            InnerBusStopMeta(busStopName, busStopLatitude, busStopLongtitude)
+                            InnerBusStopMeta(busStopName, busStopLatitude, busStopLongtitude,0)
                         busStopMetaList?.add(innerBusStopMeta)
                     }
                     busStopMeta = BusStopMeta(busStopMetaList)
