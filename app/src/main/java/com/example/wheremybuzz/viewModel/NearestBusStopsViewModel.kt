@@ -3,10 +3,7 @@ package com.example.wheremybuzz.viewModel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
-import com.example.wheremybuzz.model.BusStopMeta
-import com.example.wheremybuzz.model.BusStopsCodeResponse
-import com.example.wheremybuzz.model.InnerBusStopMeta
-import com.example.wheremybuzz.model.NearestBusStopsResponse
+import com.example.wheremybuzz.model.*
 import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
 import java.util.HashMap
@@ -15,7 +12,7 @@ import java.util.HashMap
 class NearestBusStopsViewModel(application: Application) : AndroidViewModel(application) {
     //private var nearestBusStopsListObservable: LiveData<List<NearestBusStopsResponse>>? = null
     private var nearestBusStopsGeoListObservable: LiveData<BusStopMeta>? = null
-    private var busStopCodeListObservable: LiveData<BusStopsCodeResponse>? = null
+    private var busStopCodeListObservable: LiveData<BusStopCode>? = null
     private val TAG = "NearestBusStopsView"
     private var expandableListDetail: HashMap<String, List<InnerBusStopMeta>>
 
@@ -38,6 +35,13 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         expandableListDetail[key] = list
     }
 
+    fun getGeoLocationBasedOnBusStopName(busStopName: String): GeoLocation {
+        return GeoLocation(
+            expandableListDetail[busStopName]!![0].latitude,
+            expandableListDetail[busStopName]!![0].longitude
+        )
+    }
+
     /**
      * Expose the LiveData Projects query so the UI can observe it.
      */
@@ -55,9 +59,9 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         busStopName: String,
         latitude: Double,
         longtitude: Double
-    ): LiveData<BusStopsCodeResponse>? {
+    ): LiveData<BusStopCode>? {
         busStopCodeListObservable =
-            busStopCodeRepository!!.getBusStopCode(busStopName, latitude, longtitude)
+            busStopCodeRepository!!.getBusStopCode(busStopName, latitude, longtitude , 0)
         return busStopCodeListObservable
     }
 

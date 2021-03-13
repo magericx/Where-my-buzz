@@ -33,7 +33,7 @@ class CustomExpandableListAdapter(
     ): View? {
         var convertView = convertView
         val expandedListText =
-            getChild(listPosition, expandedListPosition) as String
+            getChild(listPosition, expandedListPosition)
         if (convertView == null) {
             val layoutInflater = context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -41,7 +41,7 @@ class CustomExpandableListAdapter(
         }
         val expandedListTextView = convertView
             ?.findViewById<View>(R.id.expandedListItem) as TextView
-        expandedListTextView.text = expandedListText
+        expandedListTextView.text = expandedListText.toString()
         return convertView
     }
 

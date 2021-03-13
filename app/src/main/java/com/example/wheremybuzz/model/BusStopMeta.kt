@@ -10,3 +10,8 @@ data class InnerBusStopMeta(
     val longitude: Double,
     val busStopCode: Long
 )
+
+data class GeoLocation(
+    val latitude: Double,
+    val longitude: Double
+)

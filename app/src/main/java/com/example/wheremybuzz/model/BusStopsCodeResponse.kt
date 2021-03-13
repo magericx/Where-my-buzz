@@ -12,3 +12,7 @@ data class Value(
     val Longitude: Double,
     val RoadName: String
 )
+
+data class BusStopCode(
+    val busStopCode:String
+)
