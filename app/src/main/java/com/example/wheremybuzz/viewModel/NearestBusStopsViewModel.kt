@@ -60,16 +60,17 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         latitude: Double,
         longtitude: Double
     ): LiveData<BusStopCode>? {
+//        busStopCodeListObservable = busStopCodeRepository!!.getBusStopCode(busStopName, latitude, longtitude)
         busStopCodeListObservable =
-            busStopCodeRepository!!.getBusStopCode(busStopName, latitude, longtitude , 0)
+            busStopCodeRepository!!.getBusStopCodeFromCache(busStopName, latitude, longtitude)
         return busStopCodeListObservable
     }
 
-    fun retrieveBusStopCodesAndSaveCache(){
+    fun retrieveBusStopCodesAndSaveCache() {
         busStopCodeRepository!!.retrieveBusStopCodesToCache()
     }
 
-    fun checkCacheExists(): Boolean{
+    fun checkCacheExists(): Boolean {
         return busStopCodeRepository!!.cacheExists()
     }
 

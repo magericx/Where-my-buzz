@@ -98,10 +98,43 @@ class BusStopCodeRepository {
         }
     }
 
+    fun getBusStopCodeFromCache(
+        busStopName: String,
+        latitude: Double,
+        longtitude: Double
+    ) : LiveData<BusStopCode>? {
+        val data: MutableLiveData<BusStopCode> =
+            MutableLiveData()
+        val cacheData = readJSONFile()
+        if (cacheData != null) {
+            for (i in cacheData.value.indices){
+                if (cacheData.value[i].Description == busStopName){
+                    if (String.format(
+                            "%.5f",
+                            cacheData.value[i].Latitude
+                        ).toDouble().equals(latitude) && String.format(
+                            "%.5f",
+                            cacheData.value[i].Longitude
+                        ).toDouble().equals(longtitude)
+                    ) {
+                        Log.d(
+                            TAG,
+                            "Found bus stop code is " + cacheData.value[i].BusStopCode + " for bus stop " + busStopName
+                        )
+                        data.postValue(BusStopCode(cacheData.value[i].BusStopCode))
+                    }
+                }
+            }
+        }
+        return data
+
+
+    }
+
     fun getBusStopCode(
         busStopName: String,
         latitude: Double,
-        longtitude: Double, skip: Int
+        longtitude: Double
     ): LiveData<BusStopCode>? {
         val data: MutableLiveData<BusStopCode> =
             MutableLiveData()
@@ -244,10 +277,10 @@ class BusStopCodeRepository {
     }
 
     fun cacheExists(): Boolean {
-        try{
+        try {
             val file = context.getFileStreamPath(fileName)
             return !(file == null || !file.exists())
-        } catch (e: IOException){
+        } catch (e: IOException) {
             Log.e(TAG, "Exception while checking for file $fileName")
         }
         return false

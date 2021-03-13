@@ -43,15 +43,14 @@ class TabFragment : Fragment() {
             ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
                 NearestBusStopsViewModel::class.java
             )
-        if (position == 0){
+        if (position == 0) {
             // check if busStopCode is empty or missing, retrieve and save to cache
             if (!viewModel?.checkCacheExists()!!) {
-                Log.d(TAG,"Cache file does not exists")
+                Log.d(TAG, "Cache file does not exists")
                 //let background thread handle the heavy workload
-                val thread = Thread(Runnable {
+                Thread(Runnable {
                     viewModel?.retrieveBusStopCodesAndSaveCache()
-                })
-                thread.start()
+                }).start()
 
             }
         }
@@ -82,7 +81,11 @@ class TabFragment : Fragment() {
 //                geoLocation!!.latitude,
 //                geoLocation.longitude
 //            )
-            //viewModel?.retrieveBusStopCodesAndSaveCache()
+            viewModel?.getBusStopCodeListObservable(
+                (expandableListTitle as ArrayList<String>)[groupPosition],
+                geoLocation!!.latitude,
+                geoLocation.longitude
+            )
         }
 
         expandableListView!!.setOnGroupCollapseListener { groupPosition ->
