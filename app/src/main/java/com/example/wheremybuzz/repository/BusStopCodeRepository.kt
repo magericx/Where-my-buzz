@@ -6,10 +6,12 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.wheremybuzz.ApiConstants
 import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.api.BusStopsCodeApiService
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopsCodeResponse
+import com.example.wheremybuzz.model.Value
 import com.google.gson.Gson
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -191,7 +193,63 @@ class BusStopCodeRepository {
             }
 
         })
+    }
 
+    fun retrieveBusStopCodesToCache() {
+        val retrofit = getRetrofit(baseUrl)
+        val service = retrofit.create(BusStopsCodeApiService::class.java)
+        val busStopCodesList: MutableList<Value> = mutableListOf()
+        val skip = 0
+        val increment = ApiConstants.BUS_STOP_CODE_INCREMENT
+        val max = ApiConstants.BUS_STOP_CODE_MAX
 
+        var i = skip
+        while (i < max) {
+            println("Now at $i")
+            val call = service.getBusStopsCode(
+                ltaApiKey, i
+            )
+            call.enqueue(object : retrofit2.Callback<BusStopsCodeResponse> {
+                override fun onResponse(
+                    call: Call<BusStopsCodeResponse>,
+                    response: Response<BusStopsCodeResponse>
+                ) {
+                    Log.d(TAG, "Status code is ${response.code()}")
+                    Log.d(TAG, "Content is ${response.body()}")
+                    if (response.code() == 200) {
+                        val busStopCodeResponse = response.body().value
+                        if (!busStopCodeResponse.isNullOrEmpty()) {
+                            //writeJSONtoFile(response.body())
+                            busStopCodesList.addAll(busStopCodeResponse)
+                        }
+                        if (i == max) {
+                            Log.d(TAG, "Write to cache")
+                            writeJSONtoFile(BusStopsCodeResponse(busStopCodesList))
+                        }
+                    } else {
+                        Log.d(TAG, "Status code is " + response.code())
+                        Log.d(TAG, "Message is " + response.message())
+                        Log.d(TAG, "Body is " + response.body())
+
+                    }
+                }
+
+                override fun onFailure(call: Call<BusStopsCodeResponse>, t: Throwable) {
+                    Log.d(TAG, "Encountered error " + t.message)
+                }
+
+            })
+            i += increment
+        }
+    }
+
+    fun cacheExists(): Boolean {
+        try{
+            val file = context.getFileStreamPath(fileName)
+            return !(file == null || !file.exists())
+        } catch (e: IOException){
+            Log.e(TAG, "Exception while checking for file $fileName")
+        }
+        return false
     }
 }

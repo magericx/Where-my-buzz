@@ -18,7 +18,6 @@ import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopMeta
-import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.model.InnerBusStopMeta
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 
@@ -44,6 +43,18 @@ class TabFragment : Fragment() {
             ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
                 NearestBusStopsViewModel::class.java
             )
+        if (position == 0){
+            // check if busStopCode is empty or missing, retrieve and save to cache
+            if (!viewModel?.checkCacheExists()!!) {
+                Log.d(TAG,"Cache file does not exists")
+                //let background thread handle the heavy workload
+                val thread = Thread(Runnable {
+                    viewModel?.retrieveBusStopCodesAndSaveCache()
+                })
+                thread.start()
+
+            }
+        }
         observeViewModel()
     }
 
@@ -64,12 +75,14 @@ class TabFragment : Fragment() {
                 (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
                 Toast.LENGTH_SHORT
             ).show()
-            val geoLocation = viewModel?.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
-            observeBusStopCodeViewModel(
-                (expandableListTitle as ArrayList<String>)[groupPosition],
-                geoLocation!!.latitude,
-                geoLocation.longitude
-            )
+            val geoLocation =
+                viewModel?.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
+//            observeBusStopCodeViewModel(
+//                (expandableListTitle as ArrayList<String>)[groupPosition],
+//                geoLocation!!.latitude,
+//                geoLocation.longitude
+//            )
+            //viewModel?.retrieveBusStopCodesAndSaveCache()
         }
 
         expandableListView!!.setOnGroupCollapseListener { groupPosition ->
@@ -174,7 +187,6 @@ class TabFragment : Fragment() {
                     })
         }
     }
-
 
     companion object {
         fun getInstance(position: Int): Fragment {

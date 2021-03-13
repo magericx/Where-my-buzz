@@ -65,4 +65,12 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return busStopCodeListObservable
     }
 
+    fun retrieveBusStopCodesAndSaveCache(){
+        busStopCodeRepository!!.retrieveBusStopCodesToCache()
+    }
+
+    fun checkCacheExists(): Boolean{
+        return busStopCodeRepository!!.cacheExists()
+    }
+
 }
