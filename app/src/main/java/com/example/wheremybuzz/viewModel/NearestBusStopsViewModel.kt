@@ -71,9 +71,4 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
             busStopCodeTempCache = busStopCodeRepository!!.retrieveBusStopCodesToCache()
         }
     }
-
-    fun checkCacheExists(): Boolean {
-        return busStopCodeRepository!!.cacheExists()
-    }
-
 }

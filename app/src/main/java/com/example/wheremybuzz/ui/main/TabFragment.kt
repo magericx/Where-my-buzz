@@ -19,6 +19,7 @@ import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopMeta
 import com.example.wheremybuzz.model.InnerBusStopMeta
+import com.example.wheremybuzz.utils.CacheHelper
 import com.example.wheremybuzz.utils.SharedPreference
 import com.example.wheremybuzz.utils.TimeUtil
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
@@ -35,6 +36,7 @@ class TabFragment : Fragment() {
     var viewModel: NearestBusStopsViewModel? = null
     val timeUtil:TimeUtil = TimeUtil()
     val cacheSharedPreference: SharedPreference = SharedPreference()
+    val cacheHelper: CacheHelper = CacheHelper()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +52,7 @@ class TabFragment : Fragment() {
             )
         if (position == 0) {
             // check if busStopCode is empty or missing, retrieve and save to cache
-            if (!viewModel?.checkCacheExists()!! || timeUtil.checkTimeStampExceed3days(cacheSharedPreference.getSharedPreference())) {
+            if (!cacheHelper.cacheExists() || timeUtil.checkTimeStampExceed3days(cacheSharedPreference.getSharedPreference())) {
                 Log.d(TAG, "Cache file does not exists or expired")
                 //let background thread handle the heavy workload
                 Thread(Runnable {

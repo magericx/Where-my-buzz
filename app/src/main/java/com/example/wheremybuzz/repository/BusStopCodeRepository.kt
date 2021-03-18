@@ -12,6 +12,7 @@ import com.example.wheremybuzz.api.BusStopsCodeApiService
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.model.Value
+import com.example.wheremybuzz.utils.CacheHelper
 import com.google.gson.Gson
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -31,8 +32,8 @@ class BusStopCodeRepository {
     private val ai: ApplicationInfo = context.packageManager
         .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
     private val ltaApiKey: String = ai.metaData["com.lta.android.geo.LTA_KEY"] as String
-    private val readWriteLock = ReentrantReadWriteLock()
-    private val fileName = "busStopCode.cache"
+    private val cacheHelper: CacheHelper = CacheHelper()
+
 
     val clientBuilder: OkHttpClient.Builder = OkHttpClient.Builder();
     val loggingInterceptor: HttpLoggingInterceptor = HttpLoggingInterceptor();
@@ -48,56 +49,6 @@ class BusStopCodeRepository {
             .build()
     }
 
-    //write whenever there is data from server
-    private fun writeJSONtoFile(busStopCodeResponse: BusStopsCodeResponse) {
-
-        readWriteLock.writeLock().lock()
-        var fos: FileOutputStream? = null
-        try {
-            //Create a Object of Post
-            val post = busStopCodeResponse
-            //Create a Object of Gson
-            val gson = Gson()
-            //Convert the Json object to JsonString
-            val jsonString: String = gson.toJson(post)
-            fos = context.openFileOutput(fileName, Context.MODE_PRIVATE)
-            fos.write(jsonString.toByteArray(Charsets.UTF_8))
-        } catch (e: IOException) {
-            Log.e(TAG, "saveCache: $e")
-        } finally {
-            readWriteLock.writeLock().unlock()
-            try {
-                fos?.close()
-            } catch (e: Exception) {
-
-            }
-        }
-    }
-
-    //this will read JSON file as a whole
-    private fun readJSONFile(): BusStopsCodeResponse? {
-        readWriteLock.readLock().lock()
-        var fis: FileInputStream? = null
-        return try {
-            fis = context.openFileInput(fileName)
-            val length = fis.available()
-            val data = ByteArray(length)
-            fis.read(data)
-            val gson = Gson()
-            return gson.fromJson(String(data), BusStopsCodeResponse::class.java)
-        } catch (e: Exception) {
-            null
-            //Log.e(TAG, "readCache: $e")
-        } finally {
-            readWriteLock.readLock().unlock()
-            try {
-                fis?.close()
-            } catch (e: Exception) {
-
-            }
-        }
-    }
-
     fun getBusStopCodeFromCache(
         busStopCodeTempCache: BusStopsCodeResponse?,
         busStopName: String,
@@ -107,7 +58,7 @@ class BusStopCodeRepository {
         var found = false
         val data: MutableLiveData<BusStopCode> =
             MutableLiveData()
-        val cacheData: BusStopsCodeResponse? = busStopCodeTempCache ?: readJSONFile()
+        val cacheData: BusStopsCodeResponse? = busStopCodeTempCache ?: cacheHelper.readJSONFile()
         if (cacheData != null) {
             for (i in cacheData.value.indices) {
                 if (cacheData.value[i].Description == busStopName) {
@@ -189,7 +140,7 @@ class BusStopCodeRepository {
                 if (response.code() == 200) {
                     val busStopCodeResponse = response.body().value
                     if (!busStopCodeResponse.isNullOrEmpty()) {
-                        writeJSONtoFile(response.body())
+                        cacheHelper.writeJSONtoFile(response.body())
                         for (i in busStopCodeResponse.indices) {
                             //add internal logic to check and iterate
                             if (busStopCodeResponse[i].Description == busStopName) {
@@ -207,7 +158,10 @@ class BusStopCodeRepository {
                                         "Found bus stop code is " + busStopCodeResponse[i].BusStopCode + " for bus stop " + busStopName
                                     )
                                     observerList.postValue(BusStopCode(busStopCodeResponse[i].BusStopCode))
-                                    Log.d(TAG, "Retrieved from cache" + readJSONFile()?.value)
+                                    Log.d(
+                                        TAG,
+                                        "Retrieved from cache" + cacheHelper.readJSONFile()?.value
+                                    )
                                 }
 
                             }
@@ -273,7 +227,7 @@ class BusStopCodeRepository {
                         }
                         if (i == max) {
                             Log.d(TAG, "Write to cache")
-                            writeJSONtoFile(BusStopsCodeResponse(busStopCodesList))
+                            cacheHelper.writeJSONtoFile(BusStopsCodeResponse(busStopCodesList))
                             busStopCodeCache = BusStopsCodeResponse(busStopCodesList)
                         }
                     } else {
@@ -292,15 +246,5 @@ class BusStopCodeRepository {
             i += increment
         }
         return busStopCodeCache
-    }
-
-    fun cacheExists(): Boolean {
-        try {
-            val file = context.getFileStreamPath(fileName)
-            return !(file == null || !file.exists())
-        } catch (e: IOException) {
-            Log.e(TAG, "Exception while checking for file $fileName")
-        }
-        return false
     }
 }
