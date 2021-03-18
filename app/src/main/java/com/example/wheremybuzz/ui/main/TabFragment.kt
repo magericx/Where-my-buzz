@@ -19,6 +19,8 @@ import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopMeta
 import com.example.wheremybuzz.model.InnerBusStopMeta
+import com.example.wheremybuzz.utils.SharedPreference
+import com.example.wheremybuzz.utils.TimeUtil
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 
 
@@ -31,6 +33,9 @@ class TabFragment : Fragment() {
     var expandableListTitle: List<String>? = null
     var expandableListDetail: HashMap<String, List<InnerBusStopMeta>>? = null
     var viewModel: NearestBusStopsViewModel? = null
+    val timeUtil:TimeUtil = TimeUtil()
+    val cacheSharedPreference: SharedPreference = SharedPreference()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         position = arguments!!.getInt("pos")
@@ -45,13 +50,13 @@ class TabFragment : Fragment() {
             )
         if (position == 0) {
             // check if busStopCode is empty or missing, retrieve and save to cache
-            if (!viewModel?.checkCacheExists()!!) {
-                Log.d(TAG, "Cache file does not exists")
+            if (!viewModel?.checkCacheExists()!! || timeUtil.checkTimeStampExceed3days(cacheSharedPreference.getSharedPreference())) {
+                Log.d(TAG, "Cache file does not exists or expired")
                 //let background thread handle the heavy workload
                 Thread(Runnable {
                     viewModel?.retrieveBusStopCodesAndSaveCache()
                 }).start()
-
+                cacheSharedPreference.setSharedPreference()
             }
         }
         observeViewModel()
@@ -70,7 +75,7 @@ class TabFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         expandableListView!!.setOnGroupExpandListener { groupPosition ->
             Toast.makeText(
-                activity!!.getApplicationContext(),
+                activity!!.applicationContext,
                 (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
                 Toast.LENGTH_SHORT
             ).show()
@@ -185,7 +190,7 @@ class TabFragment : Fragment() {
                                 Toast.LENGTH_SHORT
                             ).show()
                             //createBusStopNameHeader(nearestBusStopMeta)
-                            Log.d(TAG, "API result is $nearestBusStopMeta")
+                            Log.d(TAG, "getBusStopCodeListObservable API result is $nearestBusStopMeta")
                         }
                     })
         }

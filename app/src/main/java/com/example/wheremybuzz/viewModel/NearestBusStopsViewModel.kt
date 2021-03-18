@@ -15,6 +15,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     private var busStopCodeListObservable: LiveData<BusStopCode>? = null
     private val TAG = "NearestBusStopsView"
     private var expandableListDetail: HashMap<String, List<InnerBusStopMeta>>
+    private var busStopCodeTempCache: BusStopsCodeResponse? = null
 
     var nearestBusRepository: NearestBusRepository? = null
     var busStopCodeRepository: BusStopCodeRepository? = null
@@ -60,14 +61,15 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         latitude: Double,
         longtitude: Double
     ): LiveData<BusStopCode>? {
-//        busStopCodeListObservable = busStopCodeRepository!!.getBusStopCode(busStopName, latitude, longtitude)
         busStopCodeListObservable =
-            busStopCodeRepository!!.getBusStopCodeFromCache(busStopName, latitude, longtitude)
+            busStopCodeRepository!!.getBusStopCodeFromCache(busStopCodeTempCache, busStopName, latitude, longtitude)
         return busStopCodeListObservable
     }
 
     fun retrieveBusStopCodesAndSaveCache() {
-        busStopCodeRepository!!.retrieveBusStopCodesToCache()
+        if (busStopCodeRepository!!.retrieveBusStopCodesToCache() != null) {
+            busStopCodeTempCache = busStopCodeRepository!!.retrieveBusStopCodesToCache()
+        }
     }
 
     fun checkCacheExists(): Boolean {

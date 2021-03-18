@@ -99,16 +99,18 @@ class BusStopCodeRepository {
     }
 
     fun getBusStopCodeFromCache(
+        busStopCodeTempCache: BusStopsCodeResponse?,
         busStopName: String,
         latitude: Double,
         longtitude: Double
-    ) : LiveData<BusStopCode>? {
+    ): LiveData<BusStopCode>? {
+        var found = false
         val data: MutableLiveData<BusStopCode> =
             MutableLiveData()
-        val cacheData = readJSONFile()
+        val cacheData: BusStopsCodeResponse? = busStopCodeTempCache ?: readJSONFile()
         if (cacheData != null) {
-            for (i in cacheData.value.indices){
-                if (cacheData.value[i].Description == busStopName){
+            for (i in cacheData.value.indices) {
+                if (cacheData.value[i].Description == busStopName) {
                     if (String.format(
                             "%.5f",
                             cacheData.value[i].Latitude
@@ -122,26 +124,39 @@ class BusStopCodeRepository {
                             "Found bus stop code is " + cacheData.value[i].BusStopCode + " for bus stop " + busStopName
                         )
                         data.postValue(BusStopCode(cacheData.value[i].BusStopCode))
+                        found = true
+                        break
                     }
                 }
             }
+            if (!found) {
+                Log.d(
+                    TAG,
+                    "Bus stop not found in temporary cache and persistent cache, calling API now to retrieve"
+                )
+                searchForBusStopCode(data, 0, busStopName, latitude, longtitude)
+            }
+        } else {
+            Log.d(
+                TAG,
+                "Temporary cache & persistent cache not available"
+            )
+            searchForBusStopCode(data, 0, busStopName, latitude, longtitude)
         }
         return data
-
-
     }
 
-    fun getBusStopCode(
-        busStopName: String,
-        latitude: Double,
-        longtitude: Double
-    ): LiveData<BusStopCode>? {
-        val data: MutableLiveData<BusStopCode> =
-            MutableLiveData()
-
-        searchForBusStopCode(data, 0, busStopName, latitude, longtitude)
-        return data
-    }
+//    fun getBusStopCode(
+//        busStopName: String,
+//        latitude: Double,
+//        longtitude: Double
+//    ): LiveData<BusStopCode>? {
+//        val data: MutableLiveData<BusStopCode> =
+//            MutableLiveData()
+//
+//        searchForBusStopCode(data, 0, busStopName, latitude, longtitude)
+//        return data
+//    }
 
 
     fun searchForBusStopCode(
@@ -228,13 +243,14 @@ class BusStopCodeRepository {
         })
     }
 
-    fun retrieveBusStopCodesToCache() {
+    fun retrieveBusStopCodesToCache(): BusStopsCodeResponse? {
         val retrofit = getRetrofit(baseUrl)
         val service = retrofit.create(BusStopsCodeApiService::class.java)
         val busStopCodesList: MutableList<Value> = mutableListOf()
         val skip = 0
         val increment = ApiConstants.BUS_STOP_CODE_INCREMENT
         val max = ApiConstants.BUS_STOP_CODE_MAX
+        var busStopCodeCache: BusStopsCodeResponse? = null
 
         var i = skip
         while (i < max) {
@@ -258,6 +274,7 @@ class BusStopCodeRepository {
                         if (i == max) {
                             Log.d(TAG, "Write to cache")
                             writeJSONtoFile(BusStopsCodeResponse(busStopCodesList))
+                            busStopCodeCache = BusStopsCodeResponse(busStopCodesList)
                         }
                     } else {
                         Log.d(TAG, "Status code is " + response.code())
@@ -274,6 +291,7 @@ class BusStopCodeRepository {
             })
             i += increment
         }
+        return busStopCodeCache
     }
 
     fun cacheExists(): Boolean {
