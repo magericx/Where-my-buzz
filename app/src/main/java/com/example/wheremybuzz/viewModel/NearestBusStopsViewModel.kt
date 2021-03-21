@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import com.example.wheremybuzz.model.*
+import com.example.wheremybuzz.repository.BusScheduleRepository
 import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
 import java.util.HashMap
@@ -13,35 +14,40 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     //private var nearestBusStopsListObservable: LiveData<List<NearestBusStopsResponse>>? = null
     private var nearestBusStopsGeoListObservable: LiveData<BusStopMeta>? = null
     private var busStopCodeListObservable: LiveData<BusStopCode>? = null
+    //private var busScheduleListObservable: LiveData<BusScheduleMeta>? = null
     private val TAG = "NearestBusStopsView"
-    private var expandableListDetail: HashMap<String, List<InnerBusStopMeta>>
+    private var expandableListDetail: HashMap<String, List<FinalBusMeta>>
     private var busStopCodeTempCache: BusStopsCodeResponse? = null
 
     var nearestBusRepository: NearestBusRepository? = null
     var busStopCodeRepository: BusStopCodeRepository? = null
+    var busScheduleRepository: BusScheduleRepository? = null
 
     init {
         // If any transformation is needed, this can be simply done by Transformations class ...
 //            projectListObservable = NearestBusRepository
         nearestBusRepository = NearestBusRepository()
         busStopCodeRepository = BusStopCodeRepository()
+        busScheduleRepository = BusScheduleRepository()
         expandableListDetail = HashMap()
     }
 
-    fun getExpandableListDetail(): HashMap<String, List<InnerBusStopMeta>> {
+    fun getExpandableListDetail(): HashMap<String, List<FinalBusMeta>> {
         return expandableListDetail
     }
 
-    fun setExpandableListDetail(key: String, list: List<InnerBusStopMeta>) {
+    fun setExpandableListDetail(key: String, list: List<FinalBusMeta>) {
         expandableListDetail[key] = list
     }
 
     fun getGeoLocationBasedOnBusStopName(busStopName: String): GeoLocation {
         return GeoLocation(
-            expandableListDetail[busStopName]!![0].latitude,
-            expandableListDetail[busStopName]!![0].longitude
+            expandableListDetail[busStopName]!![0].Geolocation.latitude,
+            expandableListDetail[busStopName]!![0].Geolocation.longitude
         )
     }
+
+    //TODO add new method to set data that are newly retrieved
 
     /**
      * Expose the LiveData Projects query so the UI can observe it.
@@ -66,9 +72,15 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return busStopCodeListObservable
     }
 
+    //if API call is success, update temp cache
     fun retrieveBusStopCodesAndSaveCache() {
         if (busStopCodeRepository!!.retrieveBusStopCodesToCache() != null) {
             busStopCodeTempCache = busStopCodeRepository!!.retrieveBusStopCodesToCache()
         }
+    }
+
+    fun getBusScheduleListObservable(busStopCode: Long): LiveData<BusScheduleMeta>?{
+        return busScheduleRepository!!.getBusScheduleMetaList(busStopCode)
+
     }
 }

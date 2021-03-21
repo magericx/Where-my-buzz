@@ -35,8 +35,8 @@ class BusStopCodeRepository {
     private val cacheHelper: CacheHelper = CacheHelper()
 
 
-    val clientBuilder: OkHttpClient.Builder = OkHttpClient.Builder();
-    val loggingInterceptor: HttpLoggingInterceptor = HttpLoggingInterceptor();
+    private val clientBuilder: OkHttpClient.Builder = OkHttpClient.Builder()
+    private val loggingInterceptor: HttpLoggingInterceptor = HttpLoggingInterceptor()
 
     //temp solution, need to change to singleton
     private fun getRetrofit(baseUrl: String): Retrofit {
