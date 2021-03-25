@@ -7,42 +7,22 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.MyApplication
-import com.example.wheremybuzz.api.BusScheduleApiService
 import com.example.wheremybuzz.model.BusScheduleMeta
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
+import com.example.wheremybuzz.utils.LtaRetrofitHelper
 import retrofit2.Call
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class BusScheduleRepository {
     private val TAG: String = "BusScheduleRepository"
-    private val baseUrl: String = "http://datamall2.mytransport.sg"
     private val context: Context = MyApplication.instance.applicationContext
     private val ai: ApplicationInfo = context.packageManager
         .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
     private val ltaApiKey: String = ai.metaData["com.lta.android.geo.LTA_KEY"] as String
 
-    private val clientBuilder: OkHttpClient.Builder = OkHttpClient.Builder()
-    private val loggingInterceptor: HttpLoggingInterceptor = HttpLoggingInterceptor()
-
-    //temp solution, need to change to singleton
-    private fun getRetrofit(baseUrl: String): Retrofit {
-        loggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
-        clientBuilder.addInterceptor(loggingInterceptor)
-        return Retrofit.Builder()
-            .baseUrl(baseUrl)
-            //.client(clientBuilder.build())
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
     fun getBusScheduleMetaList(busStopCode: Long): LiveData<BusScheduleMeta>? {
         val data: MutableLiveData<BusScheduleMeta> =
             MutableLiveData()
-        val retrofit = getRetrofit(baseUrl)
-        val service = retrofit.create(BusScheduleApiService::class.java)
+        val service = LtaRetrofitHelper.busScheduleApiService
         val call = service.getBusScheduleMeta(
             ltaApiKey, busStopCode
         )

@@ -11,6 +11,7 @@ import com.example.wheremybuzz.api.NearestBusStopApiService
 import com.example.wheremybuzz.model.BusStopMeta
 import com.example.wheremybuzz.model.InnerBusStopMeta
 import com.example.wheremybuzz.model.NearestBusStopsResponse
+import com.example.wheremybuzz.utils.GoogleRetrofitHelper
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -19,7 +20,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class NearestBusRepository {
     private val TAG: String = "NearestBusRepository"
-    private val baseUrl: String = "https://maps.googleapis.com"
 
     //For 1 bus stop
     //private val radius: Int = 100
@@ -31,14 +31,6 @@ class NearestBusRepository {
         .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
     private val googleApiKey: String = ai.metaData["com.google.android.geo.API_KEY"] as String
 
-    //temp solution, need to change to singleton
-    private fun getRetrofit(baseUrl: String): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
     fun getNearestBusStops(location: String): LiveData<BusStopMeta>? {
         val data: MutableLiveData<BusStopMeta> =
             MutableLiveData()
@@ -46,8 +38,7 @@ class NearestBusRepository {
         val busStopMetaList: MutableList<InnerBusStopMeta?>? = mutableListOf()
         var busStopMeta: BusStopMeta?
 
-        val retrofit = getRetrofit(baseUrl)
-        val service = retrofit.create(NearestBusStopApiService::class.java)
+        val service = GoogleRetrofitHelper.nearestBusStopApiService
         val call = service.getNearestBusStops(
             location,
             radius,
@@ -75,7 +66,7 @@ class NearestBusRepository {
                             nearestBusStopsResponse.results[i].geometry.location.lng
                         ).toDouble()
                         innerBusStopMeta =
-                            InnerBusStopMeta(busStopName, busStopLatitude, busStopLongtitude,0)
+                            InnerBusStopMeta(busStopName, busStopLatitude, busStopLongtitude, 0)
                         busStopMetaList?.add(innerBusStopMeta)
                     }
                     busStopMeta = BusStopMeta(busStopMetaList)

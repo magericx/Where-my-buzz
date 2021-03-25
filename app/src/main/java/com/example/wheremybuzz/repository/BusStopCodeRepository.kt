@@ -8,46 +8,22 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.ApiConstants
 import com.example.wheremybuzz.MyApplication
-import com.example.wheremybuzz.api.BusStopsCodeApiService
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.model.Value
 import com.example.wheremybuzz.utils.CacheHelper
-import com.google.gson.Gson
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
+import com.example.wheremybuzz.utils.LtaRetrofitHelper
 import retrofit2.Call
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.IOException
-import java.util.concurrent.locks.ReentrantReadWriteLock
 
 class BusStopCodeRepository {
     private val TAG: String = "BusStopCodeRepository"
-    private val baseUrl: String = "http://datamall2.mytransport.sg"
     private val context: Context = MyApplication.instance.applicationContext
     private val ai: ApplicationInfo = context.packageManager
         .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
     private val ltaApiKey: String = ai.metaData["com.lta.android.geo.LTA_KEY"] as String
     private val cacheHelper: CacheHelper = CacheHelper()
 
-
-    private val clientBuilder: OkHttpClient.Builder = OkHttpClient.Builder()
-    private val loggingInterceptor: HttpLoggingInterceptor = HttpLoggingInterceptor()
-
-    //temp solution, need to change to singleton
-    private fun getRetrofit(baseUrl: String): Retrofit {
-        loggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
-        clientBuilder.addInterceptor(loggingInterceptor)
-        return Retrofit.Builder()
-            .baseUrl(baseUrl)
-            //.client(clientBuilder.build())
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
 
     fun getBusStopCodeFromCache(
         busStopCodeTempCache: BusStopsCodeResponse?,
@@ -115,8 +91,7 @@ class BusStopCodeRepository {
         latitude: Double,
         longtitude: Double
     ) {
-        val retrofit = getRetrofit(baseUrl)
-        val service = retrofit.create(BusStopsCodeApiService::class.java)
+        val service = LtaRetrofitHelper.busStopsCodeApiService
         val call = service.getBusStopsCode(
             ltaApiKey, skip
         )
@@ -198,8 +173,7 @@ class BusStopCodeRepository {
     }
 
     fun retrieveBusStopCodesToCache(): BusStopsCodeResponse? {
-        val retrofit = getRetrofit(baseUrl)
-        val service = retrofit.create(BusStopsCodeApiService::class.java)
+        val service = LtaRetrofitHelper.busStopsCodeApiService
         val busStopCodesList: MutableList<Value> = mutableListOf()
         val skip = 0
         val increment = ApiConstants.BUS_STOP_CODE_INCREMENT
