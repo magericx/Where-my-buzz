@@ -12,6 +12,7 @@ import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.model.Value
 import com.example.wheremybuzz.utils.CacheHelper
+import com.example.wheremybuzz.utils.CacheManager
 import com.example.wheremybuzz.utils.LtaRetrofitHelper
 import retrofit2.Call
 import retrofit2.Response
@@ -22,8 +23,7 @@ class BusStopCodeRepository {
     private val ai: ApplicationInfo = context.packageManager
         .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
     private val ltaApiKey: String = ai.metaData["com.lta.android.geo.LTA_KEY"] as String
-    private val cacheHelper: CacheHelper = CacheHelper()
-
+    var cacheHelper: CacheHelper = CacheManager.initializeCacheHelper!!
 
     fun getBusStopCodeFromCache(
         busStopCodeTempCache: BusStopsCodeResponse?,
@@ -115,7 +115,7 @@ class BusStopCodeRepository {
                 if (response.code() == 200) {
                     val busStopCodeResponse = response.body().value
                     if (!busStopCodeResponse.isNullOrEmpty()) {
-                        cacheHelper.writeJSONtoFile(response.body())
+                        cacheHelper?.writeJSONtoFile(response.body())
                         for (i in busStopCodeResponse.indices) {
                             //add internal logic to check and iterate
                             if (busStopCodeResponse[i].Description == busStopName) {
@@ -135,7 +135,7 @@ class BusStopCodeRepository {
                                     observerList.postValue(BusStopCode(busStopCodeResponse[i].BusStopCode))
                                     Log.d(
                                         TAG,
-                                        "Retrieved from cache" + cacheHelper.readJSONFile()?.value
+                                        "Retrieved from cache " + cacheHelper?.readJSONFile()?.value
                                     )
                                 }
 
@@ -201,7 +201,7 @@ class BusStopCodeRepository {
                         }
                         if (i == max) {
                             Log.d(TAG, "Write to cache")
-                            cacheHelper.writeJSONtoFile(BusStopsCodeResponse(busStopCodesList))
+                            cacheHelper?.writeJSONtoFile(BusStopsCodeResponse(busStopCodesList))
                             busStopCodeCache = BusStopsCodeResponse(busStopCodesList)
                         }
                     } else {

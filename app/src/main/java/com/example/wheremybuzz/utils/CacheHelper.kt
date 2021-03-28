@@ -2,31 +2,33 @@ package com.example.wheremybuzz.utils
 
 import android.content.Context
 import android.util.Log
-import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.google.gson.Gson
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.concurrent.locks.ReadWriteLock
 
-class CacheHelper {
-    private val context: Context = MyApplication.instance.applicationContext
-    private val readWriteLock = ReentrantReadWriteLock()
-    private val TAG = "CacheWriter"
+class CacheHelper(
+    private val appContext: Context,
+    private val fileName: String,
+    private val readWriteLock: ReadWriteLock
+) {
+
+    companion object {
+        const val TAG = "CacheHelper"
+    }
 
     fun writeJSONtoFile(busStopCodeResponse: BusStopsCodeResponse) {
         readWriteLock.writeLock().lock()
         var fos: FileOutputStream? = null
         try {
-            //Create a Object of Post
-            val post = busStopCodeResponse
-            //Create a Object of Gson
             val gson = Gson()
             //Convert the Json object to JsonString
-            val jsonString: String = gson.toJson(post)
-            fos = context.openFileOutput(Companion.fileName, Context.MODE_PRIVATE)
+            val jsonString: String = gson.toJson(busStopCodeResponse)
+            fos = appContext.openFileOutput(fileName, Context.MODE_PRIVATE)
             fos.write(jsonString.toByteArray(Charsets.UTF_8))
+            Log.d(TAG,"Writing into cache here ")
         } catch (e: IOException) {
             Log.e(TAG, "saveCache: $e")
         } finally {
@@ -44,7 +46,7 @@ class CacheHelper {
         readWriteLock.readLock().lock()
         var fis: FileInputStream? = null
         return try {
-            fis = context.openFileInput(fileName)
+            fis = appContext.openFileInput(fileName)
             val length = fis.available()
             val data = ByteArray(length)
             fis.read(data)
@@ -64,7 +66,7 @@ class CacheHelper {
 
     fun cacheExists(): Boolean {
         try {
-            val file = context.getFileStreamPath(fileName)
+            val file = appContext.getFileStreamPath(fileName)
             return !(file == null || !file.exists())
         } catch (e: IOException) {
             Log.e(TAG, "Exception while checking for file $fileName")
@@ -72,7 +74,5 @@ class CacheHelper {
         return false
     }
 
-    companion object {
-        private const val fileName = "busStopCode.cache"
-    }
+
 }

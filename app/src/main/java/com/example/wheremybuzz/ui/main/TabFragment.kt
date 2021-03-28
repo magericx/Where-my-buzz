@@ -18,9 +18,11 @@ import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.*
 import com.example.wheremybuzz.utils.CacheHelper
+import com.example.wheremybuzz.utils.CacheManager
 import com.example.wheremybuzz.utils.SharedPreference
 import com.example.wheremybuzz.utils.TimeUtil
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
+import kotlin.reflect.KParameter
 
 
 class TabFragment : Fragment() {
@@ -32,9 +34,10 @@ class TabFragment : Fragment() {
     var expandableListTitle: List<String>? = null
     var expandableListDetail: HashMap<String, List<FinalBusMeta>>? = null
     var viewModel: NearestBusStopsViewModel? = null
-    val timeUtil: TimeUtil = TimeUtil()
-    val cacheSharedPreference: SharedPreference = SharedPreference()
-    val cacheHelper: CacheHelper = CacheHelper()
+    private val timeUtil: TimeUtil = TimeUtil()
+    private val cacheSharedPreference: SharedPreference = SharedPreference()
+    private var cacheHelper: CacheHelper? = null
+    private val forceUpdateCache = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +54,8 @@ class TabFragment : Fragment() {
             )
         if (position == 0) {
             // check if busStopCode is empty or missing, retrieve and save to cache
-            if (!cacheHelper.cacheExists() || timeUtil.checkTimeStampExceed3days(
+            cacheHelper = CacheManager.initializeCacheHelper
+            if (forceUpdateCache || !cacheHelper?.cacheExists()!! || timeUtil.checkTimeStampExceed3days(
                     cacheSharedPreference.getSharedPreference()
                 )
             ) {
