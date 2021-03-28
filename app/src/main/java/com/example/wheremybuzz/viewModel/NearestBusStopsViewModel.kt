@@ -27,7 +27,6 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     var busScheduleRepository: BusScheduleRepository? = null
 
     init {
-//            projectListObservable = NearestBusRepository
         nearestBusRepository = NearestBusRepository()
         busStopCodeRepository = BusStopCodeRepository()
         busScheduleRepository = BusScheduleRepository()
@@ -68,20 +67,8 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return GeoLocation(
             expandableListDetail[busStopName]!![0].Geolocation.latitude,
             expandableListDetail[busStopName]!![0].Geolocation.longitude
-//            expandableListDetail[busStopName]!!.Geolocation.latitude,
-//            expandableListDetail[busStopName]!!.Geolocation.longitude
         )
     }
-
-    //TODO add new method to set data that are newly retrieved
-
-    /**
-     * Expose the LiveData Projects query so the UI can observe it.
-     */
-//    fun getNearestBusStopsListObservable(): LiveData<List<NearestBusStopsResponse>>? {
-//        nearestBusStopsListObservable = mRepository!!.getNearestBusStops()
-//        return nearestBusStopsListObservable
-//    }
 
     fun getNearestBusStopsGeoListObservable(location: String): LiveData<BusStopMeta>? {
         nearestBusStopsGeoListObservable = nearestBusRepository!!.getNearestBusStops(location)

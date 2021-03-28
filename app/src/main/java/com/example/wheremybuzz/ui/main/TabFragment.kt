@@ -23,12 +23,14 @@ import com.example.wheremybuzz.utils.SharedPreferenceManager
 import com.example.wheremybuzz.utils.TimeUtil
 import com.example.wheremybuzz.utils.helper.SharedPreferenceHelper
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
+import com.facebook.shimmer.ShimmerFrameLayout
 
 
 class TabFragment : Fragment() {
     var position = 0
     val TAG: String = "TabFragment"
 
+    var shimmeringLayoutView: ShimmerFrameLayout? = null
     var expandableListView: ExpandableListView? = null
     var expandableListAdapter: ExpandableListAdapter? = null
     var expandableListTitle: List<String>? = null
@@ -37,7 +39,7 @@ class TabFragment : Fragment() {
     private val timeUtil: TimeUtil = TimeUtil()
     lateinit var sharedPreference: SharedPreferenceHelper
     private var cacheHelper: CacheHelper? = null
-    private val forceUpdateCache = true
+    private val forceUpdateCache = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,12 +71,21 @@ class TabFragment : Fragment() {
         observeNearestBusStopsModel()
     }
 
+    override fun onResume(){
+        super.onResume()
+        shimmeringLayoutView?.startShimmerAnimation()
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         val view: View = inflater.inflate(R.layout.fragment_tab, container, false)
+        shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
+        Log.d(TAG,"debug shimmer $shimmeringLayoutView")
+        shimmeringLayoutView?.startShimmerAnimation()
         expandableListView = view.findViewById(R.id.expandableListView)
+        Log.d(TAG,"debug expendable $expandableListView")
         return view
     }
 
