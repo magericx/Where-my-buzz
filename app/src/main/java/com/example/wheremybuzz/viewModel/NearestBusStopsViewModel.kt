@@ -1,6 +1,7 @@
 package com.example.wheremybuzz.viewModel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import com.example.wheremybuzz.model.*
@@ -14,9 +15,12 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     //private var nearestBusStopsListObservable: LiveData<List<NearestBusStopsResponse>>? = null
     private var nearestBusStopsGeoListObservable: LiveData<BusStopMeta>? = null
     private var busStopCodeListObservable: LiveData<BusStopCode>? = null
-    //private var busScheduleListObservable: LiveData<BusScheduleMeta>? = null
+    private var busScheduleListObservable: LiveData<BusScheduleMeta>? = null
     private val TAG = "NearestBusStopsView"
+
     private var expandableListDetail: HashMap<String, List<FinalBusMeta>>
+
+    //    private var expandableListDetail: HashMap<String, FinalBusMeta>
     private var busStopCodeTempCache: BusStopsCodeResponse? = null
 
     var nearestBusRepository: NearestBusRepository? = null
@@ -36,14 +40,43 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return expandableListDetail
     }
 
+//    fun getExpandableListDetail(): HashMap<String, FinalBusMeta> {
+//        return expandableListDetail
+//    }
+
     fun setExpandableListDetail(key: String, list: List<FinalBusMeta>) {
         expandableListDetail[key] = list
+    }
+
+//    fun setExpandableListDetail(key: String, finalBusMeta: FinalBusMeta) {
+//        expandableListDetail[key] = finalBusMeta
+//    }
+
+    //TODO Add implementations for busStopCode
+    fun setBusStopCodeInExpendableListDetail(key: String, busStopCode: BusStopCode) {
+        if (expandableListDetail.containsKey(key)){
+
+        }
+
+    }
+
+    //TODO Add implementation for services
+    fun setServicesInExpendableListDetail(/*key: String, list: List<Service>*/) {
+        Log.d(TAG, "expandableListDetails is $expandableListDetail")
+        //       if (expandableListDetail.containsKey(key)) {
+//            val oldExpandableListDetail = expandableListDetail[key]
+//            val List<FinalBusMeta>
+//            val newExpendableListDetail =
+//                expandableListDetail.replace(key,)
+        //    }
     }
 
     fun getGeoLocationBasedOnBusStopName(busStopName: String): GeoLocation {
         return GeoLocation(
             expandableListDetail[busStopName]!![0].Geolocation.latitude,
             expandableListDetail[busStopName]!![0].Geolocation.longitude
+//            expandableListDetail[busStopName]!!.Geolocation.latitude,
+//            expandableListDetail[busStopName]!!.Geolocation.longitude
         )
     }
 
@@ -68,7 +101,12 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         longtitude: Double
     ): LiveData<BusStopCode>? {
         busStopCodeListObservable =
-            busStopCodeRepository!!.getBusStopCodeFromCache(busStopCodeTempCache, busStopName, latitude, longtitude)
+            busStopCodeRepository!!.getBusStopCodeFromCache(
+                busStopCodeTempCache,
+                busStopName,
+                latitude,
+                longtitude
+            )
         return busStopCodeListObservable
     }
 
@@ -79,8 +117,9 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    fun getBusScheduleListObservable(busStopCode: Long): LiveData<BusScheduleMeta>?{
-        return busScheduleRepository!!.getBusScheduleMetaList(busStopCode)
-
+    fun getBusScheduleListObservable(busStopCode: Long): LiveData<BusScheduleMeta>? {
+        busScheduleListObservable = busScheduleRepository!!.getBusScheduleMetaList(busStopCode)
+        //expandableListDetail[busStopCode] = busScheduleListObservable?.value?.Services
+        return busScheduleListObservable
     }
 }

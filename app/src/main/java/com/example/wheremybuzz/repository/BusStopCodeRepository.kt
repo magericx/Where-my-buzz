@@ -11,9 +11,9 @@ import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.model.Value
-import com.example.wheremybuzz.utils.CacheHelper
+import com.example.wheremybuzz.utils.helper.CacheHelper
 import com.example.wheremybuzz.utils.CacheManager
-import com.example.wheremybuzz.utils.LtaRetrofitHelper
+import com.example.wheremybuzz.utils.helper.LtaRetrofitHelper
 import retrofit2.Call
 import retrofit2.Response
 
@@ -25,6 +25,7 @@ class BusStopCodeRepository {
     private val ltaApiKey: String = ai.metaData["com.lta.android.geo.LTA_KEY"] as String
     var cacheHelper: CacheHelper = CacheManager.initializeCacheHelper!!
 
+    //retrieve busStopCode from cache
     fun getBusStopCodeFromCache(
         busStopCodeTempCache: BusStopsCodeResponse?,
         busStopName: String,
@@ -115,7 +116,7 @@ class BusStopCodeRepository {
                 if (response.code() == 200) {
                     val busStopCodeResponse = response.body().value
                     if (!busStopCodeResponse.isNullOrEmpty()) {
-                        cacheHelper?.writeJSONtoFile(response.body())
+                        cacheHelper.writeJSONtoFile(response.body())
                         for (i in busStopCodeResponse.indices) {
                             //add internal logic to check and iterate
                             if (busStopCodeResponse[i].Description == busStopName) {
@@ -135,7 +136,7 @@ class BusStopCodeRepository {
                                     observerList.postValue(BusStopCode(busStopCodeResponse[i].BusStopCode))
                                     Log.d(
                                         TAG,
-                                        "Retrieved from cache " + cacheHelper?.readJSONFile()?.value
+                                        "Retrieved from cache " + cacheHelper.readJSONFile()?.value
                                     )
                                 }
 
@@ -172,6 +173,7 @@ class BusStopCodeRepository {
         })
     }
 
+    //retrieve bus stop code from API and store into cache file
     fun retrieveBusStopCodesToCache(): BusStopsCodeResponse? {
         val service = LtaRetrofitHelper.busStopsCodeApiService
         val busStopCodesList: MutableList<Value> = mutableListOf()
@@ -201,7 +203,7 @@ class BusStopCodeRepository {
                         }
                         if (i == max) {
                             Log.d(TAG, "Write to cache")
-                            cacheHelper?.writeJSONtoFile(BusStopsCodeResponse(busStopCodesList))
+                            cacheHelper.writeJSONtoFile(BusStopsCodeResponse(busStopCodesList))
                             busStopCodeCache = BusStopsCodeResponse(busStopCodesList)
                         }
                     } else {

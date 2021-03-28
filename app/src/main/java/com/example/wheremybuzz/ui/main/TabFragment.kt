@@ -17,12 +17,11 @@ import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.*
-import com.example.wheremybuzz.utils.CacheHelper
+import com.example.wheremybuzz.utils.helper.CacheHelper
 import com.example.wheremybuzz.utils.CacheManager
-import com.example.wheremybuzz.utils.SharedPreference
+import com.example.wheremybuzz.utils.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.TimeUtil
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
-import kotlin.reflect.KParameter
 
 
 class TabFragment : Fragment() {
@@ -35,9 +34,9 @@ class TabFragment : Fragment() {
     var expandableListDetail: HashMap<String, List<FinalBusMeta>>? = null
     var viewModel: NearestBusStopsViewModel? = null
     private val timeUtil: TimeUtil = TimeUtil()
-    private val cacheSharedPreference: SharedPreference = SharedPreference()
+    lateinit var cacheSharedPreferenceHelper: SharedPreferenceHelper
     private var cacheHelper: CacheHelper? = null
-    private val forceUpdateCache = false
+    private val forceUpdateCache = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +47,7 @@ class TabFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+        this.cacheSharedPreferenceHelper = SharedPreferenceHelper
         this.viewModel =
             ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
                 NearestBusStopsViewModel::class.java
@@ -56,7 +56,7 @@ class TabFragment : Fragment() {
             // check if busStopCode is empty or missing, retrieve and save to cache
             cacheHelper = CacheManager.initializeCacheHelper
             if (forceUpdateCache || !cacheHelper?.cacheExists()!! || timeUtil.checkTimeStampExceed3days(
-                    cacheSharedPreference.getSharedPreference()
+                    cacheSharedPreferenceHelper.getSharedPreference()
                 )
             ) {
                 Log.d(TAG, "Cache file does not exists or expired")
@@ -64,7 +64,7 @@ class TabFragment : Fragment() {
                 Thread(Runnable {
                     viewModel?.retrieveBusStopCodesAndSaveCache()
                 }).start()
-                cacheSharedPreference.setSharedPreference()
+                cacheSharedPreferenceHelper.setSharedPreference()
             }
         }
         observeNearestBusStopsModel()
@@ -153,10 +153,10 @@ class TabFragment : Fragment() {
                 ?.observe(viewLifecycleOwner,
                     Observer<BusStopCode> { busStopCode ->
                         if (busStopCode != null) {
-                            Toast.makeText(
-                                activity!!.applicationContext, "Found bus stop code",
-                                Toast.LENGTH_SHORT
-                            ).show()
+//                            Toast.makeText(
+//                                activity!!.applicationContext, "Found bus stop code",
+//                                Toast.LENGTH_SHORT
+//                            ).show()
                             observeBusScheduleModel(busStopCode.busStopCode.toLong())
                             Log.d(
                                 TAG,
@@ -174,6 +174,8 @@ class TabFragment : Fragment() {
                 activity!!.applicationContext, "Found schedule ${it.Services}",
                 Toast.LENGTH_SHORT
             ).show()
+            viewModel?.setServicesInExpendableListDetail()
+            updateExpandableListAdapter()
             Log.d(
                 TAG,
                 "getBusScheduleListObservable API result is ${it.Services}"
@@ -194,14 +196,14 @@ class TabFragment : Fragment() {
     }
 
     private fun updateExpandableListAdapter(){
-        expandableListDetail = viewModel?.getExpandableListDetail()
-        expandableListTitle = ArrayList<String>(expandableListDetail!!.keys)
-        expandableListAdapter =
-            CustomExpandableListAdapter(
-                activity!!.applicationContext,
-                expandableListTitle!!,
-                expandableListDetail!!
-            )
+//        expandableListDetail = viewModel?.getExpandableListDetail()
+//        expandableListTitle = ArrayList<String>(expandableListDetail!!.keys)
+//        expandableListAdapter =
+//            CustomExpandableListAdapter(
+//                activity!!.applicationContext,
+//                expandableListTitle!!,
+//                expandableListDetail!!
+//            )
         (expandableListAdapter as CustomExpandableListAdapter).notifyDataSetChanged()
     }
 

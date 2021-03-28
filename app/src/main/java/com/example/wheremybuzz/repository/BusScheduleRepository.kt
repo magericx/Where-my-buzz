@@ -8,7 +8,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.model.BusScheduleMeta
-import com.example.wheremybuzz.utils.LtaRetrofitHelper
+import com.example.wheremybuzz.utils.helper.LtaRetrofitHelper
 import retrofit2.Call
 import retrofit2.Response
 

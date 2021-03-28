@@ -1,4 +1,4 @@
-package com.example.wheremybuzz.utils
+package com.example.wheremybuzz.utils.helper
 
 import android.content.Context
 import android.util.Log

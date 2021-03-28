@@ -1,4 +1,4 @@
-package com.example.wheremybuzz.utils
+package com.example.wheremybuzz.utils.helper
 
 import com.example.wheremybuzz.api.BusScheduleApiService
 import com.example.wheremybuzz.api.BusStopsCodeApiService

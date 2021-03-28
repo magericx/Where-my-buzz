@@ -1,4 +1,4 @@
-package com.example.wheremybuzz.utils
+package com.example.wheremybuzz.utils.helper
 
 import com.example.wheremybuzz.api.NearestBusStopApiService
 import retrofit2.Retrofit
@@ -18,6 +18,10 @@ object GoogleRetrofitHelper {
 
     val nearestBusStopApiService: NearestBusStopApiService by lazy {
         retrofit.create(NearestBusStopApiService::class.java)
+    }
+
+    private fun test(){
+
     }
 
 }

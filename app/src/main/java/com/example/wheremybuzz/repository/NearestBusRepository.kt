@@ -7,15 +7,12 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.MyApplication
-import com.example.wheremybuzz.api.NearestBusStopApiService
 import com.example.wheremybuzz.model.BusStopMeta
 import com.example.wheremybuzz.model.InnerBusStopMeta
 import com.example.wheremybuzz.model.NearestBusStopsResponse
-import com.example.wheremybuzz.utils.GoogleRetrofitHelper
+import com.example.wheremybuzz.utils.helper.GoogleRetrofitHelper
 import retrofit2.Call
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 
 class NearestBusRepository {
