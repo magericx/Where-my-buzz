@@ -1,7 +1,7 @@
 package com.example.wheremybuzz.model
 
 data class FinalBusMeta(
-    val BusStopCode: String,
+    var BusStopCode: String,
     val Geolocation: GeoLocation,
-    val Services: List<Service>
+    var Services: List<Service>
 )

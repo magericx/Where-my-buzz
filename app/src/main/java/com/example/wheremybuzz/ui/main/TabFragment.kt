@@ -19,8 +19,9 @@ import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.*
 import com.example.wheremybuzz.utils.helper.CacheHelper
 import com.example.wheremybuzz.utils.CacheManager
-import com.example.wheremybuzz.utils.SharedPreferenceHelper
+import com.example.wheremybuzz.utils.SharedPreferenceManager
 import com.example.wheremybuzz.utils.TimeUtil
+import com.example.wheremybuzz.utils.helper.SharedPreferenceHelper
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 
 
@@ -34,20 +35,18 @@ class TabFragment : Fragment() {
     var expandableListDetail: HashMap<String, List<FinalBusMeta>>? = null
     var viewModel: NearestBusStopsViewModel? = null
     private val timeUtil: TimeUtil = TimeUtil()
-    lateinit var cacheSharedPreferenceHelper: SharedPreferenceHelper
+    lateinit var sharedPreference: SharedPreferenceHelper
     private var cacheHelper: CacheHelper? = null
     private val forceUpdateCache = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         position = arguments!!.getInt("pos")
-        //createExpandableListAdapter()
-        //getNearestBusStopsData()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        this.cacheSharedPreferenceHelper = SharedPreferenceHelper
+        this.sharedPreference = SharedPreferenceManager.getSharedPreferenceHelper
         this.viewModel =
             ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
                 NearestBusStopsViewModel::class.java
@@ -56,7 +55,7 @@ class TabFragment : Fragment() {
             // check if busStopCode is empty or missing, retrieve and save to cache
             cacheHelper = CacheManager.initializeCacheHelper
             if (forceUpdateCache || !cacheHelper?.cacheExists()!! || timeUtil.checkTimeStampExceed3days(
-                    cacheSharedPreferenceHelper.getSharedPreference()
+                    sharedPreference.getSharedPreference()
                 )
             ) {
                 Log.d(TAG, "Cache file does not exists or expired")
@@ -64,7 +63,7 @@ class TabFragment : Fragment() {
                 Thread(Runnable {
                     viewModel?.retrieveBusStopCodesAndSaveCache()
                 }).start()
-                cacheSharedPreferenceHelper.setSharedPreference()
+                sharedPreference.setSharedPreference()
             }
         }
         observeNearestBusStopsModel()
@@ -89,7 +88,11 @@ class TabFragment : Fragment() {
             ).show()
             val geoLocation =
                 viewModel?.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
-            observeBusStopCodeModel((expandableListTitle as ArrayList<String>)[groupPosition],geoLocation!!.latitude,geoLocation.longitude)
+            observeBusStopCodeModel(
+                (expandableListTitle as ArrayList<String>)[groupPosition],
+                geoLocation!!.latitude,
+                geoLocation.longitude
+            )
         }
 
         expandableListView!!.setOnGroupCollapseListener { groupPosition ->
@@ -122,8 +125,11 @@ class TabFragment : Fragment() {
                 for (i in nearestBusStopMetaList.BusStopMetaList.indices) {
                     val busStopArrayList: MutableList<FinalBusMeta> = ArrayList()
                     val serviceArrayList: MutableList<Service> = ArrayList()
-                    val geoLocation = GeoLocation(nearestBusStopsList[i]!!.latitude, nearestBusStopsList[i]!!.longitude)
-                    val finalBusMeta = FinalBusMeta("0",geoLocation,serviceArrayList)
+                    val geoLocation = GeoLocation(
+                        nearestBusStopsList[i]!!.latitude,
+                        nearestBusStopsList[i]!!.longitude
+                    )
+                    val finalBusMeta = FinalBusMeta("0", geoLocation, serviceArrayList)
 //                    val innerBusStopMeta = InnerBusStopMeta(
 //                        nearestBusStopsList[i]!!.busStopName,
 //                        nearestBusStopsList[i]!!.latitude,
@@ -136,7 +142,7 @@ class TabFragment : Fragment() {
                         busStopArrayList
                     )
                 }
-               createExpandableListAdapter()
+                createExpandableListAdapter()
             }
         }
     }
@@ -153,11 +159,16 @@ class TabFragment : Fragment() {
                 ?.observe(viewLifecycleOwner,
                     Observer<BusStopCode> { busStopCode ->
                         if (busStopCode != null) {
-//                            Toast.makeText(
-//                                activity!!.applicationContext, "Found bus stop code",
-//                                Toast.LENGTH_SHORT
-//                            ).show()
-                            observeBusScheduleModel(busStopCode.busStopCode.toLong())
+                            //update hashmap for adapter
+                            viewModel?.setBusStopCodeInExpendableListDetail(
+                                expandableListTitle,
+                                busStopCode.busStopCode
+                            )
+                            //proceed to busSchedule API
+                            observeBusScheduleModel(
+                                busStopCode.busStopCode.toLong(),
+                                expandableListTitle
+                            )
                             Log.d(
                                 TAG,
                                 "getBusStopCodeListObservable API result is $busStopCode"
@@ -168,19 +179,16 @@ class TabFragment : Fragment() {
     }
 
     //TODO Add logic to update adapter
-    private fun observeBusScheduleModel(busStopCode: Long){
-        viewModel?.getBusScheduleListObservable(busStopCode)?.observe(viewLifecycleOwner,Observer<BusScheduleMeta>{
-            Toast.makeText(
-                activity!!.applicationContext, "Found schedule ${it.Services}",
-                Toast.LENGTH_SHORT
-            ).show()
-            viewModel?.setServicesInExpendableListDetail()
-            updateExpandableListAdapter()
-            Log.d(
-                TAG,
-                "getBusScheduleListObservable API result is ${it.Services}"
-            )
-        })
+    private fun observeBusScheduleModel(busStopCode: Long, busStopName: String) {
+        viewModel?.getBusScheduleListObservable(busStopCode)
+            ?.observe(viewLifecycleOwner, Observer<BusScheduleMeta> {
+                viewModel?.setServicesInExpendableListDetail(busStopName, it.Services)
+                updateExpandableListAdapter()
+                Log.d(
+                    TAG,
+                    "getBusScheduleListObservable API result is ${it.Services}"
+                )
+            })
     }
 
     private fun createExpandableListAdapter() {
@@ -195,15 +203,7 @@ class TabFragment : Fragment() {
         expandableListView!!.setAdapter(expandableListAdapter)
     }
 
-    private fun updateExpandableListAdapter(){
-//        expandableListDetail = viewModel?.getExpandableListDetail()
-//        expandableListTitle = ArrayList<String>(expandableListDetail!!.keys)
-//        expandableListAdapter =
-//            CustomExpandableListAdapter(
-//                activity!!.applicationContext,
-//                expandableListTitle!!,
-//                expandableListDetail!!
-//            )
+    private fun updateExpandableListAdapter() {
         (expandableListAdapter as CustomExpandableListAdapter).notifyDataSetChanged()
     }
 

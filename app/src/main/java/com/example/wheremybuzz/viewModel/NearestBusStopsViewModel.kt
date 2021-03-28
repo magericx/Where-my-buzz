@@ -20,7 +20,6 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
 
     private var expandableListDetail: HashMap<String, List<FinalBusMeta>>
 
-    //    private var expandableListDetail: HashMap<String, FinalBusMeta>
     private var busStopCodeTempCache: BusStopsCodeResponse? = null
 
     var nearestBusRepository: NearestBusRepository? = null
@@ -28,7 +27,6 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     var busScheduleRepository: BusScheduleRepository? = null
 
     init {
-        // If any transformation is needed, this can be simply done by Transformations class ...
 //            projectListObservable = NearestBusRepository
         nearestBusRepository = NearestBusRepository()
         busStopCodeRepository = BusStopCodeRepository()
@@ -40,35 +38,30 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return expandableListDetail
     }
 
-//    fun getExpandableListDetail(): HashMap<String, FinalBusMeta> {
-//        return expandableListDetail
-//    }
-
     fun setExpandableListDetail(key: String, list: List<FinalBusMeta>) {
         expandableListDetail[key] = list
     }
 
-//    fun setExpandableListDetail(key: String, finalBusMeta: FinalBusMeta) {
-//        expandableListDetail[key] = finalBusMeta
-//    }
-
-    //TODO Add implementations for busStopCode
-    fun setBusStopCodeInExpendableListDetail(key: String, busStopCode: BusStopCode) {
-        if (expandableListDetail.containsKey(key)){
-
+    fun setBusStopCodeInExpendableListDetail(key: String, busStopCode: String) {
+        if (expandableListDetail.containsKey(key)) {
+            val oldValue = expandableListDetail[key]
+            oldValue?.get(0)?.BusStopCode = busStopCode
+            oldValue?.let {
+                expandableListDetail[key] = it
+            }
         }
-
     }
 
     //TODO Add implementation for services
-    fun setServicesInExpendableListDetail(/*key: String, list: List<Service>*/) {
+    fun setServicesInExpendableListDetail(key: String, serviceList: List<Service>) {
         Log.d(TAG, "expandableListDetails is $expandableListDetail")
-        //       if (expandableListDetail.containsKey(key)) {
-//            val oldExpandableListDetail = expandableListDetail[key]
-//            val List<FinalBusMeta>
-//            val newExpendableListDetail =
-//                expandableListDetail.replace(key,)
-        //    }
+        if (expandableListDetail.containsKey(key)) {
+            val oldValue  = expandableListDetail[key]
+            oldValue?.get(0)?.Services = serviceList
+            oldValue?.let{
+                expandableListDetail[key] = it
+            }
+        }
     }
 
     fun getGeoLocationBasedOnBusStopName(busStopName: String): GeoLocation {
