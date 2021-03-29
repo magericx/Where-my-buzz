@@ -2,11 +2,11 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="20dp"
-    android:layout_marginLeft="10dp"
+    android:layout_marginTop="0dp"
+    android:layout_marginLeft="0dp"
     >
 
-    <View
+    <!--<View
         android:id="@+id/thumbnail"
         android:layout_width="@dimen/placeholderImage"
         android:layout_height="@dimen/placeholderImage"
@@ -31,5 +31,15 @@
             android:layout_height="@dimen/placeholderTextHeight"
             android:layout_marginTop="5dp"
             android:background="@color/background" />
-    </LinearLayout>
+    </LinearLayout>-->
+
+    <TextView
+        android:id="@+id/listTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="?android:attr/expandableListPreferredItemPaddingLeft"
+        android:background="@color/background"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp" />
+
 </RelativeLayout>

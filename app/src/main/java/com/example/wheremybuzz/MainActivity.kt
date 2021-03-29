@@ -1,11 +1,15 @@
 package com.example.wheremybuzz
 
 import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.viewpager.widget.ViewPager
 import com.example.wheremybuzz.ui.main.ViewPagerAdapter
+import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.material.tabs.TabLayout
 
 
@@ -24,5 +28,9 @@ class MainActivity : AppCompatActivity() {
         viewPager!!.adapter = adapter
         tabLayout = findViewById<View>(R.id.tabs) as TabLayout
         tabLayout!!.setupWithViewPager(viewPager)
+    }
+
+    companion object {
+        const val TAG = "MainActivity"
     }
 }

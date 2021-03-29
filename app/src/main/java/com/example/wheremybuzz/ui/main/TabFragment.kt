@@ -73,7 +73,7 @@ class TabFragment : Fragment() {
 
     override fun onResume(){
         super.onResume()
-        shimmeringLayoutView?.startShimmerAnimation()
+        enableShimmer()
     }
 
     override fun onCreateView(
@@ -82,8 +82,7 @@ class TabFragment : Fragment() {
     ): View {
         val view: View = inflater.inflate(R.layout.fragment_tab, container, false)
         shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
-        Log.d(TAG,"debug shimmer $shimmeringLayoutView")
-        shimmeringLayoutView?.startShimmerAnimation()
+        enableShimmer()
         expandableListView = view.findViewById(R.id.expandableListView)
         Log.d(TAG,"debug expendable $expandableListView")
         return view
@@ -141,12 +140,6 @@ class TabFragment : Fragment() {
                         nearestBusStopsList[i]!!.longitude
                     )
                     val finalBusMeta = FinalBusMeta("0", geoLocation, serviceArrayList)
-//                    val innerBusStopMeta = InnerBusStopMeta(
-//                        nearestBusStopsList[i]!!.busStopName,
-//                        nearestBusStopsList[i]!!.latitude,
-//                        nearestBusStopsList[i]!!.longitude,
-//                        0
-//                    )
                     busStopArrayList.add(finalBusMeta)
                     viewModel?.setExpandableListDetail(
                         nearestBusStopsList[i]!!.busStopName,
@@ -154,6 +147,7 @@ class TabFragment : Fragment() {
                     )
                 }
                 createExpandableListAdapter()
+                disableShimmer()
             }
         }
     }
@@ -238,6 +232,16 @@ class TabFragment : Fragment() {
                         }
                     })
         }
+    }
+
+    fun enableShimmer(){
+        shimmeringLayoutView?.startShimmerAnimation()
+        shimmeringLayoutView?.visibility = View.VISIBLE
+    }
+
+    fun disableShimmer(){
+        shimmeringLayoutView?.stopShimmerAnimation()
+        shimmeringLayoutView?.visibility = View.INVISIBLE
     }
 
     companion object {
