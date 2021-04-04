@@ -73,7 +73,9 @@ class TabFragment : Fragment() {
 
     override fun onResume(){
         super.onResume()
-        enableShimmer()
+        if (position == 0){
+            enableShimmer()
+        }
     }
 
     override fun onCreateView(
@@ -82,7 +84,9 @@ class TabFragment : Fragment() {
     ): View {
         val view: View = inflater.inflate(R.layout.fragment_tab, container, false)
         shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
-        enableShimmer()
+        if (position == 0){
+            enableShimmer()
+        }
         expandableListView = view.findViewById(R.id.expandableListView)
         Log.d(TAG,"debug expendable $expandableListView")
         return view
