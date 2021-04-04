@@ -34,7 +34,7 @@ class TabFragment : Fragment() {
     var expandableListView: ExpandableListView? = null
     var expandableListAdapter: ExpandableListAdapter? = null
     var expandableListTitle: List<String>? = null
-    var expandableListDetail: HashMap<String, List<FinalBusMeta>>? = null
+    var expandableListDetail: HashMap<String, MutableList<FinalBusMeta>>? = null
     var viewModel: NearestBusStopsViewModel? = null
     private val timeUtil: TimeUtil = TimeUtil()
     lateinit var sharedPreference: SharedPreferenceHelper

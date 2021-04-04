@@ -18,7 +18,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     private var busScheduleListObservable: LiveData<BusScheduleMeta>? = null
     private val TAG = "NearestBusStopsView"
 
-    private var expandableListDetail: HashMap<String, List<FinalBusMeta>>
+    private var expandableListDetail: HashMap<String, MutableList<FinalBusMeta>>
 
     private var busStopCodeTempCache: BusStopsCodeResponse? = null
 
@@ -33,11 +33,11 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         expandableListDetail = HashMap()
     }
 
-    fun getExpandableListDetail(): HashMap<String, List<FinalBusMeta>> {
+    fun getExpandableListDetail(): HashMap<String, MutableList<FinalBusMeta>> {
         return expandableListDetail
     }
 
-    fun setExpandableListDetail(key: String, list: List<FinalBusMeta>) {
+    fun setExpandableListDetail(key: String, list: MutableList<FinalBusMeta>) {
         expandableListDetail[key] = list
     }
 
@@ -55,10 +55,14 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     fun setServicesInExpendableListDetail(key: String, serviceList: List<Service>) {
         Log.d(TAG, "expandableListDetails is $expandableListDetail")
         if (expandableListDetail.containsKey(key)) {
-            val oldValue  = expandableListDetail[key]
-            oldValue?.get(0)?.Services = serviceList
-            oldValue?.let{
-                expandableListDetail[key] = it
+            val currentExpandableHashMap = expandableListDetail[key]
+            val oldBusStopCode = currentExpandableHashMap?.get(0)?.BusStopCode
+            val oldGeoLocation = currentExpandableHashMap?.get(0)?.Geolocation
+            currentExpandableHashMap?.clear()
+            for (i in serviceList.indices) {
+                val newFinalBusMeta =
+                    FinalBusMeta(oldBusStopCode!!, oldGeoLocation!!, mutableListOf(serviceList[i]))
+                currentExpandableHashMap.add(newFinalBusMeta)
             }
         }
     }

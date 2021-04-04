@@ -19,7 +19,7 @@ import java.util.*
 
 class CustomExpandableListAdapter(
     private val context: Context, private val expandableListTitle: List<String>,
-    private val expandableListDetail: HashMap<String, List<FinalBusMeta>>
+    private val expandableListDetail: HashMap<String, MutableList<FinalBusMeta>>
 ) : BaseExpandableListAdapter() {
     val TAG = "CustomExpendableListAdapter"
     override fun getChild(listPosition: Int, expandedListPosition: Int): FinalBusMeta? {
