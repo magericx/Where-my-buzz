@@ -18,7 +18,9 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     private var busScheduleListObservable: LiveData<BusScheduleMeta>? = null
     private val TAG = "NearestBusStopsView"
 
-    private var expandableListDetail: HashMap<String, MutableList<FinalBusMeta>>
+    //private var expandableListDetail: HashMap<String, MutableList<FinalBusMeta>>
+    private var expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
+
 
     private var busStopCodeTempCache: BusStopsCodeResponse? = null
 
@@ -33,11 +35,11 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         expandableListDetail = HashMap()
     }
 
-    fun getExpandableListDetail(): HashMap<String, MutableList<FinalBusMeta>> {
+    fun getExpandableListDetail(): HashMap<String, MutableList<StoredBusMeta>> {
         return expandableListDetail
     }
 
-    fun setExpandableListDetail(key: String, list: MutableList<FinalBusMeta>) {
+    fun setExpandableListDetail(key: String, list: MutableList<StoredBusMeta>) {
         expandableListDetail[key] = list
     }
 
@@ -61,7 +63,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
             currentExpandableHashMap?.clear()
             for (i in serviceList.indices) {
                 val newFinalBusMeta =
-                    FinalBusMeta(oldBusStopCode!!, oldGeoLocation!!, mutableListOf(serviceList[i]))
+                    StoredBusMeta(oldBusStopCode!!, oldGeoLocation!!, serviceList[i])
                 currentExpandableHashMap.add(newFinalBusMeta)
             }
         }

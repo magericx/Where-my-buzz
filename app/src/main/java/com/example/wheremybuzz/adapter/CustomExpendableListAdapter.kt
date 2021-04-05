@@ -14,15 +14,17 @@ import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.model.FinalBusMeta
+import com.example.wheremybuzz.model.StoredBusMeta
+import com.example.wheremybuzz.utils.TimeUtil
 import java.util.*
 
 
 class CustomExpandableListAdapter(
     private val context: Context, private val expandableListTitle: List<String>,
-    private val expandableListDetail: HashMap<String, MutableList<FinalBusMeta>>
+    private val expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
 ) : BaseExpandableListAdapter() {
     val TAG = "CustomExpendableListAdapter"
-    override fun getChild(listPosition: Int, expandedListPosition: Int): FinalBusMeta? {
+    override fun getChild(listPosition: Int, expandedListPosition: Int): StoredBusMeta? {
         return expandableListDetail[expandableListTitle[listPosition]]
             ?.get(expandedListPosition)
     }
@@ -61,31 +63,15 @@ class CustomExpandableListAdapter(
             .findViewById<View>(R.id.thirdBusIcon) as ImageView
         //busNumber.text = expandedListText.toString()
         Log.d(TAG, "Retrieved expanddedListText is : $expandedListText")
-        if (expandedListText?.Services?.isNotEmpty()!!) {
-            busNumber.text = expandedListText.Services[0].ServiceNo
-            if (!expandedListText.Services[0].NextBus.EstimatedArrival.isBlank()) {
-                firstArriveTime.text = expandedListText.Services[0].NextBus.EstimatedArrival
+        if (expandedListText?.Services != null) {
+            busNumber.text = expandedListText.Services!!.ServiceNo
+            if (!expandedListText.Services!!.NextBus.EstimatedArrival.isBlank()) {
+                firstArriveTime.text = expandedListText.Services!!.NextBus.EstimatedArrival
             }
-            val firstBusType = expandedListText.Services[0].NextBus.Type
-            if (!firstBusType.isBlank()) {
-                if (firstBusType == context.getString(R.string.single_deck)) {
-                    firstBusIcon.setImageDrawable(
-                        ResourcesCompat.getDrawable(
-                            context.resources,
-                            R.drawable.single_deck,
-                            null
-                        )
-                    )
-                } else if (firstBusType == context.getString(R.string.double_deck)) {
-                    firstBusIcon.setImageDrawable(
-                        ResourcesCompat.getDrawable(
-                            context.resources,
-                            R.drawable.double_deck,
-                            null
-                        )
-                    )
-                }
-            }
+            setBusType(expandedListText.Services!!.NextBus.Type,firstBusIcon)
+            setBusType(expandedListText.Services!!.NextBus2.Type,secondBusIcon)
+            setBusType(expandedListText.Services!!.NextBus3.Type,thirdBusIcon)
+            Log.d(TAG,"Returned date is ${TimeUtil.retrieveDifferenceFromNow(expandedListText.Services!!.NextBus.EstimatedArrival)}")
         } else {
             busNumber.text = context.getString(R.string.not_available)
         }
@@ -93,6 +79,28 @@ class CustomExpandableListAdapter(
 
         //change to include fields to show
         return convertView
+    }
+
+    private fun setBusType(busType: String, busIcon:ImageView){
+        if (!busType.isBlank()) {
+            if (busType == context.getString(R.string.single_deck)) {
+                busIcon.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        context.resources,
+                        R.drawable.single_deck,
+                        null
+                    )
+                )
+            } else if (busType == context.getString(R.string.double_deck)) {
+                busIcon.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        context.resources,
+                        R.drawable.double_deck,
+                        null
+                    )
+                )
+            }
+        }
     }
 
     override fun getChildrenCount(listPosition: Int): Int {

@@ -5,3 +5,9 @@ data class FinalBusMeta(
     val Geolocation: GeoLocation,
     var Services: List<Service>
 )
+
+data class StoredBusMeta(
+    var BusStopCode: String,
+    val Geolocation: GeoLocation,
+    var Services: Service?
+)

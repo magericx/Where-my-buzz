@@ -34,9 +34,9 @@ class TabFragment : Fragment() {
     var expandableListView: ExpandableListView? = null
     var expandableListAdapter: ExpandableListAdapter? = null
     var expandableListTitle: List<String>? = null
-    var expandableListDetail: HashMap<String, MutableList<FinalBusMeta>>? = null
+    var expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>? = null
     var viewModel: NearestBusStopsViewModel? = null
-    private val timeUtil: TimeUtil = TimeUtil()
+    private val timeUtil: TimeUtil = TimeUtil
     lateinit var sharedPreference: SharedPreferenceHelper
     private var cacheHelper: CacheHelper? = null
     private val forceUpdateCache = false
@@ -137,13 +137,14 @@ class TabFragment : Fragment() {
             if (!nearestBusStopMetaList.BusStopMetaList.isNullOrEmpty()) {
                 val nearestBusStopsList = nearestBusStopMetaList.BusStopMetaList
                 for (i in nearestBusStopMetaList.BusStopMetaList.indices) {
-                    val busStopArrayList: MutableList<FinalBusMeta> = ArrayList()
-                    val serviceArrayList: MutableList<Service> = ArrayList()
+                    val busStopArrayList: MutableList<StoredBusMeta> = ArrayList()
+                    //val serviceArrayList: MutableList<Service> = ArrayList()
+                    val fakeService: Service? = null
                     val geoLocation = GeoLocation(
                         nearestBusStopsList[i]!!.latitude,
                         nearestBusStopsList[i]!!.longitude
                     )
-                    val finalBusMeta = FinalBusMeta("0", geoLocation, serviceArrayList)
+                    val finalBusMeta = StoredBusMeta("0", geoLocation, null)
                     busStopArrayList.add(finalBusMeta)
                     viewModel?.setExpandableListDetail(
                         nearestBusStopsList[i]!!.busStopName,
