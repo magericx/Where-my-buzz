@@ -71,10 +71,10 @@ class TabFragment : Fragment() {
         observeNearestBusStopsModel()
     }
 
-    override fun onResume(){
+    override fun onResume() {
         super.onResume()
-        if (position == 0){
-            enableShimmer()
+        if (position == 0) {
+            //enableShimmer()
         }
     }
 
@@ -84,11 +84,14 @@ class TabFragment : Fragment() {
     ): View {
         val view: View = inflater.inflate(R.layout.fragment_tab, container, false)
         shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
-        if (position == 0){
+        if (position == 0) {
             enableShimmer()
+        } else {
+            //position == 1, hide the shimmer
+            hideShimmeringLayout()
         }
         expandableListView = view.findViewById(R.id.expandableListView)
-        Log.d(TAG,"debug expendable $expandableListView")
+        Log.d(TAG, "debug expendable $expandableListView")
         return view
     }
 
@@ -239,13 +242,17 @@ class TabFragment : Fragment() {
         }
     }
 
-    fun enableShimmer(){
+    private fun enableShimmer() {
         shimmeringLayoutView?.startShimmerAnimation()
         shimmeringLayoutView?.visibility = View.VISIBLE
     }
 
-    fun disableShimmer(){
+    private fun disableShimmer() {
         shimmeringLayoutView?.stopShimmerAnimation()
+        shimmeringLayoutView?.visibility = View.INVISIBLE
+    }
+
+    private fun hideShimmeringLayout() {
         shimmeringLayoutView?.visibility = View.INVISIBLE
     }
 
