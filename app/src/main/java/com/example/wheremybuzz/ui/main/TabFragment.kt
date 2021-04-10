@@ -10,6 +10,7 @@ import android.widget.ExpandableListAdapter
 import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.annotation.Nullable
+import androidx.core.view.get
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -76,11 +77,8 @@ class TabFragment : Fragment() {
         if (position == 0) {
             //TODO work
             Log.d(TAG,"On resume app here")
-            val groupCount = expandableListView?.expandableListAdapter?.groupCount ?: return
-            Log.d(TAG,"total number of group count $groupCount")
-            //val expanded = expandableListView?.isGroupExpanded(1)
-            val expanded = expandableListView?.selectedPosition
-            Log.d(TAG,"group position number 1 is $expanded")
+            val list = getCurrentExpandedList()
+            Log.d(TAG,"List of bus stop code that requires re-fetch are $list")
             //add logic to reload whichever opened tabs
             //enableShimmer()
         }
@@ -132,9 +130,7 @@ class TabFragment : Fragment() {
             Toast.makeText(
                 activity!!.applicationContext,
                 (expandableListTitle as ArrayList<String>)[groupPosition] + " -> "
-                        + expandableListDetail!![(expandableListTitle as ArrayList<String>).get(
-                    groupPosition
-                )]!![childPosition],
+                        + expandableListDetail!![(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
                 Toast.LENGTH_SHORT
             ).show()
             false
@@ -264,6 +260,24 @@ class TabFragment : Fragment() {
         shimmeringLayoutView?.visibility = View.INVISIBLE
     }
 
+    //method that will check for the expanded items and add into array
+    private fun getCurrentExpandedList(): MutableList<String>?{
+        val groupCount = expandableListAdapter?.groupCount ?: return null
+        Log.d(TAG,"total number of group count $groupCount")
+        val visibleExpandedList: MutableList<String> = ArrayList()
+        for (i in 0 until groupCount){
+            val expanded = expandableListView?.isGroupExpanded(i) ?: false
+            Log.d(TAG,"group position number $i is $expanded")
+            if (expanded){
+                visibleExpandedList.add((expandableListAdapter?.getChild(i,firstIndex) as StoredBusMeta).BusStopCode)
+            }
+        }
+        if (visibleExpandedList.size == 0){
+            return null
+        }
+        return visibleExpandedList
+    }
+
     companion object {
         fun getInstance(position: Int): Fragment {
             val bundle = Bundle()
@@ -274,9 +288,11 @@ class TabFragment : Fragment() {
         }
 
         private val location: String = "1.380308, 103.741256"
+        private val firstIndex: Int = 0
     }
 
     override fun onDestroy() {
+        expandableListAdapter = null
         expandableListView = null
         viewModel?.destroyRepositories()
         viewModel = null
