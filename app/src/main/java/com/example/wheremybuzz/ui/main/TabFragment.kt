@@ -28,7 +28,7 @@ import com.facebook.shimmer.ShimmerFrameLayout
 
 class TabFragment : Fragment() {
     var position = 0
-    val TAG: String = "TabFragment"
+    private val TAG: String = "TabFragment"
 
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     var expandableListView: ExpandableListView? = null
@@ -67,13 +67,21 @@ class TabFragment : Fragment() {
                 }).start()
                 sharedPreference.setSharedPreference()
             }
+            observeNearestBusStopsModel()
         }
-        observeNearestBusStopsModel()
     }
 
     override fun onResume() {
         super.onResume()
         if (position == 0) {
+            //TODO work
+            Log.d(TAG,"On resume app here")
+            val groupCount = expandableListView?.expandableListAdapter?.groupCount ?: return
+            Log.d(TAG,"total number of group count $groupCount")
+            //val expanded = expandableListView?.isGroupExpanded(1)
+            val expanded = expandableListView?.selectedPosition
+            Log.d(TAG,"group position number 1 is $expanded")
+            //add logic to reload whichever opened tabs
             //enableShimmer()
         }
     }
@@ -115,7 +123,7 @@ class TabFragment : Fragment() {
         expandableListView!!.setOnGroupCollapseListener { groupPosition ->
             Toast.makeText(
                 activity!!.applicationContext,
-                (expandableListTitle as ArrayList<String>).get(groupPosition) + " List Collapsed.",
+                (expandableListTitle as ArrayList<String>)[groupPosition] + " List Collapsed.",
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -266,5 +274,12 @@ class TabFragment : Fragment() {
         }
 
         private val location: String = "1.380308, 103.741256"
+    }
+
+    override fun onDestroy() {
+        expandableListView = null
+        viewModel?.destroyRepositories()
+        viewModel = null
+        super.onDestroy()
     }
 }

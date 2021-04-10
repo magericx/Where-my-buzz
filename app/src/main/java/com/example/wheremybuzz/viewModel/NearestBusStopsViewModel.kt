@@ -108,4 +108,11 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         //expandableListDetail[busStopCode] = busScheduleListObservable?.value?.Services
         return busScheduleListObservable
     }
+
+    //destroy all references of repositories
+    fun destroyRepositories(){
+        nearestBusRepository = null
+        busStopCodeRepository = null
+        busScheduleRepository = null
+    }
 }
