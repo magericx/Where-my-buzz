@@ -65,13 +65,16 @@ class CustomExpandableListAdapter(
         Log.d(TAG, "Retrieved expanddedListText is : $expandedListText")
         if (expandedListText?.Services != null) {
             busNumber.text = expandedListText.Services!!.ServiceNo
-            if (!expandedListText.Services!!.NextBus.EstimatedArrival.isBlank()) {
-                firstArriveTime.text = expandedListText.Services!!.NextBus.EstimatedArrival
-            }
-            setBusType(expandedListText.Services!!.NextBus.Type,firstBusIcon)
-            setBusType(expandedListText.Services!!.NextBus2.Type,secondBusIcon)
-            setBusType(expandedListText.Services!!.NextBus3.Type,thirdBusIcon)
-            Log.d(TAG,"Returned date is ${TimeUtil.retrieveDifferenceFromNow(expandedListText.Services!!.NextBus.EstimatedArrival)}")
+            setArriveTime(expandedListText.Services!!.NextBus.EstimatedArrival, firstArriveTime)
+            setBusType(expandedListText.Services!!.NextBus.Type, firstBusIcon)
+            setArriveTime(expandedListText.Services!!.NextBus2.EstimatedArrival, secondArriveTime)
+            setBusType(expandedListText.Services!!.NextBus2.Type, secondBusIcon)
+            setArriveTime(expandedListText.Services!!.NextBus3.EstimatedArrival, thirdArriveTime)
+            setBusType(expandedListText.Services!!.NextBus3.Type, thirdBusIcon)
+            Log.d(
+                TAG,
+                "Returned date is ${TimeUtil.retrieveDifferenceFromNow(expandedListText.Services!!.NextBus.EstimatedArrival)}"
+            )
         } else {
             busNumber.text = context.getString(R.string.not_available)
         }
@@ -81,7 +84,20 @@ class CustomExpandableListAdapter(
         return convertView
     }
 
-    private fun setBusType(busType: String, busIcon:ImageView){
+    private fun setArriveTime(arriveTime: String, arriveTimeLabel: TextView) {
+        if (arriveTime.isNotBlank()) {
+            val calculateFirstArriveTime = TimeUtil.retrieveDifferenceFromNow(arriveTime)
+            if (calculateFirstArriveTime == "0" || calculateFirstArriveTime == "ARR") {
+                arriveTimeLabel.text = context.getString(R.string.arrive)
+            } else if (calculateFirstArriveTime.isEmpty()) {
+                arriveTimeLabel.text = context.getString(R.string.not_applicable)
+            } else {
+                arriveTimeLabel.text = calculateFirstArriveTime
+            }
+        }
+    }
+
+    private fun setBusType(busType: String, busIcon: ImageView) {
         if (!busType.isBlank()) {
             if (busType == context.getString(R.string.single_deck)) {
                 busIcon.setImageDrawable(
@@ -96,6 +112,14 @@ class CustomExpandableListAdapter(
                     ResourcesCompat.getDrawable(
                         context.resources,
                         R.drawable.double_deck,
+                        null
+                    )
+                )
+            } else if (busType == context.getString(R.string.bendy_deck)) {
+                busIcon.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        context.resources,
+                        R.drawable.bendy_bus,
                         null
                     )
                 )

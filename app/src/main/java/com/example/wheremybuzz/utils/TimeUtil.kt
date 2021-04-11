@@ -1,39 +1,63 @@
 package com.example.wheremybuzz.utils
 
-import android.annotation.SuppressLint
-import android.icu.text.StringPrepParseException
+import android.util.Log
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 object TimeUtil {
-    private const val threeDays = 3*24*60*60*1000
+    private const val threeDays = 3 * 24 * 60 * 60 * 1000
+    private const val minutes = 60 * 1000
+    private const val arrive = "ARR"
+    private const val TAG = "TimeUtil"
 
-    fun checkTimeStampExceed3days(searchTimestamp:Long): Boolean{
-        val currentTimeStamp : Long = System.currentTimeMillis()
+    fun checkTimeStampExceed3days(searchTimestamp: Long): Boolean {
+        val currentTimeStamp: Long = System.currentTimeMillis()
         return ((currentTimeStamp - searchTimestamp) > threeDays)
     }
 
     //@SuppressLint("SimpleDateFormat")
-    private fun convertToTime(timestamp: String) : String{
+    //Convert time into milliseconds
+    private fun convertStringToMillis(timestamp: String): Long {
         //"2021-04-05T22:36:06+08:00"
         val trimmedDateFormat = timestamp.split("+")[0]
+        val trimmedZone = timestamp.split("+")[1]
+        //Log.d(TAG,"Retrieved datetime format is $timestamp")
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+        dateFormat.timeZone = TimeZone.getTimeZone("GMT+$trimmedZone")
+        println(dateFormat.timeZone)
         val date: Date =
             dateFormat.parse(trimmedDateFormat) //You will get date object relative to server/client timezone wherever it is parsed
-        val formatter =
-            SimpleDateFormat("HH-mm-ss") //If you need time just put specific format for time like 'HH:mm:ss'
-        return formatter.format(date)
+        //Log.d(TAG,"Retrieved converted datetime format is $date")
+        val milliseconds = date.time
+        //Log.d(TAG, "Retrieve milliseconds is $milliseconds")
+        return milliseconds
     }
 
-    fun retrieveDifferenceFromNow(timestamp: String) : String{
-        return convertToTime(timestamp)
+    fun retrieveDifferenceFromNow(timestamp: String): String {
+        if (timestamp.isEmpty()) {
+            return ""
+        }
+        val convertedMillis = convertStringToMillis(timestamp)
+        return calculateDifference(convertedMillis)
     }
 
     //TODO add method to calculate difference from now
-    private fun calculateDifference(): String{
-        return ""
+    private fun calculateDifference(comparisonTime: Long): String {
+        val currentTime = getCurrentTimeStamp()
+        if (currentTime > comparisonTime) {
+            return arrive
+        }
+        val differenceMillis = comparisonTime - currentTime
+        val differenceInMinutes = TimeUnit.MILLISECONDS.toMinutes(differenceMillis)
+        //Log.d(TAG,"Comparison time is $comparisonTime and current time is $currentTime")
+        //Log.d(TAG, "Difference in Millis is $differenceInMinutes")
+        return differenceInMinutes.toString()
     }
 
+    private fun getCurrentTimeStamp(): Long {
+        return System.currentTimeMillis()
+    }
 
 
 }

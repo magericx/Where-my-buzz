@@ -6,4 +6,7 @@
     <string name="not_available">N.A</string>
     <string name="double_deck">DD</string>
     <string name="single_deck">SD</string>
+    <string name="bendy_deck">BD</string>
+    <string name="not_applicable">N.A</string>
+    <string name="arrive">Arr</string>
 </resources>

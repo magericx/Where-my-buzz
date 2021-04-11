@@ -10,7 +10,9 @@
         android:layout_height="50dp"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:gravity="right"
+        android:textAlignment="gravity"/>
 
     <TextView
         android:id="@+id/firstBlank"
@@ -21,14 +23,15 @@
 
     <TextView
         android:id="@+id/firstArriveTime"
-        android:layout_width="50dp"
+        android:layout_width="30dp"
         android:layout_height="50dp"
         android:paddingTop="10dp"
-        android:paddingBottom="10dp" />
+        android:paddingBottom="10dp"
+        android:textStyle="bold" />
 
     <ImageView
         android:id="@+id/firstBusIcon"
-        android:layout_width="50dp"
+        android:layout_width="30dp"
         android:layout_height="50dp"
         android:paddingTop="10dp"
         android:paddingBottom="10dp" />
@@ -39,18 +42,20 @@
         android:layout_height="50dp"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
-        android:text="@string/divider_1" />
+        android:text="@string/divider_1"
+        android:gravity="center"/>
 
     <TextView
         android:id="@+id/secondArriveTime"
-        android:layout_width="50dp"
+        android:layout_width="30dp"
         android:layout_height="50dp"
         android:paddingTop="10dp"
-        android:paddingBottom="10dp" />
+        android:paddingBottom="10dp"
+        android:textStyle="bold" />
 
     <ImageView
         android:id="@+id/secondBusIcon"
-        android:layout_width="50dp"
+        android:layout_width="30dp"
         android:layout_height="50dp"
         android:paddingTop="10dp"
         android:paddingBottom="10dp" />
@@ -61,18 +66,20 @@
         android:layout_height="50dp"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
-        android:text="@string/divider_1" />
+        android:text="@string/divider_1"
+        android:gravity="center"/>
 
     <TextView
         android:id="@+id/thirdArriveTime"
-        android:layout_width="50dp"
+        android:layout_width="30dp"
         android:layout_height="50dp"
         android:paddingTop="10dp"
-        android:paddingBottom="10dp" />
+        android:paddingBottom="10dp"
+        android:textStyle="bold" />
 
     <ImageView
         android:id="@+id/thirdBusIcon"
-        android:layout_width="50dp"
+        android:layout_width="30dp"
         android:layout_height="50dp"
         android:paddingTop="10dp"
         android:paddingBottom="10dp" />
