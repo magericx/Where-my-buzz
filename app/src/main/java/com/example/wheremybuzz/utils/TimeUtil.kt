@@ -1,6 +1,5 @@
 package com.example.wheremybuzz.utils
 
-import android.util.Log
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -25,13 +24,11 @@ object TimeUtil {
         //Log.d(TAG,"Retrieved datetime format is $timestamp")
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
         dateFormat.timeZone = TimeZone.getTimeZone("GMT+$trimmedZone")
-        println(dateFormat.timeZone)
         val date: Date =
             dateFormat.parse(trimmedDateFormat) //You will get date object relative to server/client timezone wherever it is parsed
         //Log.d(TAG,"Retrieved converted datetime format is $date")
-        val milliseconds = date.time
         //Log.d(TAG, "Retrieve milliseconds is $milliseconds")
-        return milliseconds
+        return date.time
     }
 
     fun retrieveDifferenceFromNow(timestamp: String): String {

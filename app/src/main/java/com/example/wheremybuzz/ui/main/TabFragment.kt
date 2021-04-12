@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.core.view.get
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.wheremybuzz.R
@@ -41,6 +42,7 @@ class TabFragment : Fragment() {
     lateinit var sharedPreference: SharedPreferenceHelper
     private var cacheHelper: CacheHelper? = null
     private val forceUpdateCache = false
+    private var allowRefresh = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,11 +76,22 @@ class TabFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (position == 0) {
-            //TODO work
-            Log.d(TAG,"On resume app here")
+        if (position == 0 && allowRefresh) {
+            allowRefresh = false
+            Log.d(TAG, "On resume app here")
             val list = getCurrentExpandedList()
-            Log.d(TAG,"List of bus stop code that requires re-fetch are $list")
+            if (!list.isNullOrEmpty()){
+                Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
+                viewModel?.refreshExpandedBusStops(list)?.observe(viewLifecycleOwner,
+                    Observer<BusScheduleRefreshStatus> { BusScheduleRefreshStatus ->
+                        Log.d(TAG, "Listener here ${BusScheduleRefreshStatus.Refreshstatus}")
+                        if (BusScheduleRefreshStatus.Refreshstatus) {
+                            Log.d(TAG, "Do refresh here")
+                            updateExpandableListAdapter()
+                        }
+                        allowRefresh = true
+                    })
+            }
             //add logic to reload whichever opened tabs
             //enableShimmer()
         }
@@ -109,6 +122,8 @@ class TabFragment : Fragment() {
                 (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
                 Toast.LENGTH_SHORT
             ).show()
+            //don't allow refresh if cell is expanding
+            allowRefresh = false
             val geoLocation =
                 viewModel?.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
             observeBusStopCodeModel(
@@ -175,6 +190,8 @@ class TabFragment : Fragment() {
             viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
                 ?.observe(viewLifecycleOwner,
                     Observer<BusStopCode> { busStopCode ->
+                        //after busStopCode retrieved, allow refresh
+                        allowRefresh = true
                         if (busStopCode != null) {
                             //update hashmap for adapter
                             viewModel?.setBusStopCodeInExpendableListDetail(
@@ -261,18 +278,26 @@ class TabFragment : Fragment() {
     }
 
     //method that will check for the expanded items and add into array
-    private fun getCurrentExpandedList(): MutableList<String>?{
+    private fun getCurrentExpandedList(): List<BusStopNameAndCode>? {
         val groupCount = expandableListAdapter?.groupCount ?: return null
-        Log.d(TAG,"total number of group count $groupCount")
-        val visibleExpandedList: MutableList<String> = ArrayList()
-        for (i in 0 until groupCount){
+        Log.d(TAG, "total number of group count $groupCount")
+        val visibleExpandedList: MutableList<BusStopNameAndCode> = ArrayList()
+        for (i in 0 until groupCount) {
             val expanded = expandableListView?.isGroupExpanded(i) ?: false
-            Log.d(TAG,"group position number $i is $expanded")
-            if (expanded){
-                visibleExpandedList.add((expandableListAdapter?.getChild(i,firstIndex) as StoredBusMeta).BusStopCode)
+            Log.d(TAG, "group position number $i is $expanded")
+            if (expanded) {
+                val busStopCode = (expandableListAdapter?.getChild(
+                    i, firstIndex
+                ) as StoredBusMeta).BusStopCode
+                val busStopName = (expandableListAdapter?.getGroup(
+                    i)
+                ).toString()
+                if (busStopCode.isNotEmpty() && busStopName.isNotEmpty()){
+                    visibleExpandedList.add(BusStopNameAndCode(busStopCode, busStopName))
+                }
             }
         }
-        if (visibleExpandedList.size == 0){
+        if (visibleExpandedList.size == 0) {
             return null
         }
         return visibleExpandedList

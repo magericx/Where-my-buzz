@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.model.*
 import com.example.wheremybuzz.repository.BusScheduleRepository
 import com.example.wheremybuzz.repository.BusStopCodeRepository
@@ -16,9 +17,9 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     private var nearestBusStopsGeoListObservable: LiveData<BusStopMeta>? = null
     private var busStopCodeListObservable: LiveData<BusStopCode>? = null
     private var busScheduleListObservable: LiveData<BusScheduleMeta>? = null
+    private var busScheduleListRefreshObservable: MutableLiveData<BusScheduleRefreshStatus>? = null
     private val TAG = "NearestBusStopsView"
 
-    //private var expandableListDetail: HashMap<String, MutableList<FinalBusMeta>>
     private var expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
 
 
@@ -109,8 +110,31 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return busScheduleListObservable
     }
 
+    fun refreshExpandedBusStops(busStopList: List<BusStopNameAndCode>): LiveData<BusScheduleRefreshStatus>? {
+        //busScheduleListRefreshObservable = busScheduleRepository!!.getBusScheduleMetaRefreshList(busStopList)
+        busScheduleListRefreshObservable = MutableLiveData()
+        //TODO add callback method here
+        busScheduleRepository?.getBusScheduleMetaRefreshList(busStopList) { it ->
+            if (it.ServicesList.isNotEmpty()) {
+                Log.d(TAG, "Execute callback when data is returned")
+                //update actual data holder
+                Log.d(TAG,"Retrieved key is ${it.ServicesList[0].first}")
+                Log.d(TAG,"Full set of keys are ${expandableListDetail.keys}")
+                if (expandableListDetail.containsKey(it.ServicesList[0].first)) {
+                    Log.d(TAG,"Found key")
+                    setServicesInExpendableListDetail(it.ServicesList[0].first,it.ServicesList[0].second.Services)
+                    busScheduleListRefreshObservable?.postValue(BusScheduleRefreshStatus(true))
+                }
+            } else {
+                busScheduleListRefreshObservable?.postValue(BusScheduleRefreshStatus(false))
+            }
+        }
+        return busScheduleListRefreshObservable
+    }
+
+
     //destroy all references of repositories
-    fun destroyRepositories(){
+    fun destroyRepositories() {
         nearestBusRepository = null
         busStopCodeRepository = null
         busScheduleRepository = null

@@ -62,7 +62,7 @@ class CustomExpandableListAdapter(
         val thirdBusIcon = convertView
             .findViewById<View>(R.id.thirdBusIcon) as ImageView
         //busNumber.text = expandedListText.toString()
-        Log.d(TAG, "Retrieved expanddedListText is : $expandedListText")
+        //Log.d(TAG, "Retrieved expanddedListText is : $expandedListText")
         if (expandedListText?.Services != null) {
             busNumber.text = expandedListText.Services!!.ServiceNo
             setArriveTime(expandedListText.Services!!.NextBus.EstimatedArrival, firstArriveTime)
@@ -71,10 +71,10 @@ class CustomExpandableListAdapter(
             setBusType(expandedListText.Services!!.NextBus2.Type, secondBusIcon)
             setArriveTime(expandedListText.Services!!.NextBus3.EstimatedArrival, thirdArriveTime)
             setBusType(expandedListText.Services!!.NextBus3.Type, thirdBusIcon)
-            Log.d(
-                TAG,
-                "Returned date is ${TimeUtil.retrieveDifferenceFromNow(expandedListText.Services!!.NextBus.EstimatedArrival)}"
-            )
+//            Log.d(
+//                TAG,
+//                "Returned date is ${TimeUtil.retrieveDifferenceFromNow(expandedListText.Services!!.NextBus.EstimatedArrival)}"
+//            )
         } else {
             busNumber.text = context.getString(R.string.not_available)
         }
