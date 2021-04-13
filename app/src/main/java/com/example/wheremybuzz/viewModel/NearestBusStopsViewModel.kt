@@ -115,14 +115,14 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         busScheduleListRefreshObservable = MutableLiveData()
         //TODO add callback method here
         busScheduleRepository?.getBusScheduleMetaRefreshList(busStopList) { it ->
-            if (it.ServicesList.isNotEmpty()) {
+            if (it.servicesList.isNotEmpty()) {
                 Log.d(TAG, "Execute callback when data is returned")
                 //update actual data holder
-                Log.d(TAG,"Retrieved key is ${it.ServicesList[0].first}")
+                Log.d(TAG,"Retrieved key is ${it.servicesList[0].first}")
                 Log.d(TAG,"Full set of keys are ${expandableListDetail.keys}")
-                if (expandableListDetail.containsKey(it.ServicesList[0].first)) {
+                if (expandableListDetail.containsKey(it.servicesList[0].first)) {
                     Log.d(TAG,"Found key")
-                    setServicesInExpendableListDetail(it.ServicesList[0].first,it.ServicesList[0].second.Services)
+                    setServicesInExpendableListDetail(it.servicesList[0].first,it.servicesList[0].second.Services)
                     busScheduleListRefreshObservable?.postValue(BusScheduleRefreshStatus(true))
                 }
             } else {

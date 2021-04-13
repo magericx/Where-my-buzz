@@ -1,6 +1,7 @@
 package com.example.wheremybuzz.api
 
 import com.example.wheremybuzz.model.BusScheduleMeta
+import io.reactivex.Observable
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -12,4 +13,11 @@ interface BusScheduleApiService {
         @Header("AccountKey") AccountKey: String,
         @Query("BusStopCode") skip: Long
     ): Call<BusScheduleMeta>
+
+    @GET("ltaodataservice/BusArrivalv2?")
+    fun getBusScheduleMetaObservable(
+        @Header("AccountKey") AccountKey: String,
+        @Query("BusStopCode") skip: Long
+    ): Observable<BusScheduleMeta>
+
 }

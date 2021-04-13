@@ -1,11 +1,11 @@
 package com.example.wheremybuzz.model
 
 data class BusScheduleMetaRefresh(
-    val ServicesList: List<Pair<String,BusScheduleMeta>>
+    val servicesList: List<Pair<String,BusScheduleMeta>>
 )
 
 data class BusScheduleRefreshStatus(
-    val Refreshstatus: Boolean
+    val refreshstatus: Boolean
 )
 
 data class BusStopNameAndCode(

@@ -114,9 +114,9 @@ class BusStopCodeRepository {
                 Log.d(TAG, "Provided longtitude is $longtitude")
 
                 if (response.code() == 200) {
-                    val busStopCodeResponse = response.body().value
+                    val busStopCodeResponse = response.body()?.value
                     if (!busStopCodeResponse.isNullOrEmpty()) {
-                        cacheHelper.writeJSONtoFile(response.body())
+                        cacheHelper.writeJSONtoFile(response.body()!!)
                         for (i in busStopCodeResponse.indices) {
                             //add internal logic to check and iterate
                             if (busStopCodeResponse[i].Description == busStopName) {
@@ -196,7 +196,7 @@ class BusStopCodeRepository {
                     Log.d(TAG, "Status code is ${response.code()}")
                     Log.d(TAG, "Content is ${response.body()}")
                     if (response.code() == 200) {
-                        val busStopCodeResponse = response.body().value
+                        val busStopCodeResponse = response.body()?.value
                         if (!busStopCodeResponse.isNullOrEmpty()) {
                             //writeJSONtoFile(response.body())
                             busStopCodesList.addAll(busStopCodeResponse)

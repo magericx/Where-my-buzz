@@ -10,9 +10,7 @@ import android.widget.ExpandableListAdapter
 import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.annotation.Nullable
-import androidx.core.view.get
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.wheremybuzz.R
@@ -84,8 +82,8 @@ class TabFragment : Fragment() {
                 Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
                 viewModel?.refreshExpandedBusStops(list)?.observe(viewLifecycleOwner,
                     Observer<BusScheduleRefreshStatus> { BusScheduleRefreshStatus ->
-                        Log.d(TAG, "Listener here ${BusScheduleRefreshStatus.Refreshstatus}")
-                        if (BusScheduleRefreshStatus.Refreshstatus) {
+                        Log.d(TAG, "Listener here ${BusScheduleRefreshStatus.refreshstatus}")
+                        if (BusScheduleRefreshStatus.refreshstatus) {
                             Log.d(TAG, "Do refresh here")
                             updateExpandableListAdapter()
                         }

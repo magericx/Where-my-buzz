@@ -51,7 +51,7 @@ class NearestBusRepository {
                 Log.d(TAG, "Content is ${response.body()}")
                 if (response.code() == 200) {
                     val nearestBusStopsResponse = response.body()
-                    for (i in nearestBusStopsResponse.results.indices) {
+                    for (i in nearestBusStopsResponse!!.results.indices) {
                         val busStopName = nearestBusStopsResponse.results[i].name
                         //need to split location into latitude and longtitude
                         val busStopLatitude: Double = String.format(
