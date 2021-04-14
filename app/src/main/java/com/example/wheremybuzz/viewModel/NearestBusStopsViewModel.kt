@@ -56,7 +56,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
 
     //TODO Add implementation for services
     fun setServicesInExpendableListDetail(key: String, serviceList: List<Service>) {
-        Log.d(TAG, "expandableListDetails is $expandableListDetail")
+        //Log.d(TAG, "expandableListDetails is $expandableListDetail")
         if (expandableListDetail.containsKey(key)) {
             val currentExpandableHashMap = expandableListDetail[key]
             val oldBusStopCode = currentExpandableHashMap?.get(0)?.BusStopCode
@@ -110,21 +110,23 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return busScheduleListObservable
     }
 
-    fun refreshExpandedBusStops(busStopList: List<BusStopNameAndCode>): LiveData<BusScheduleRefreshStatus>? {
+    fun refreshExpandedBusStops(busStopList: HashMap<String,String>): LiveData<BusScheduleRefreshStatus>? {
         //busScheduleListRefreshObservable = busScheduleRepository!!.getBusScheduleMetaRefreshList(busStopList)
         busScheduleListRefreshObservable = MutableLiveData()
         //TODO add callback method here
         busScheduleRepository?.getBusScheduleMetaRefreshList(busStopList) { it ->
             if (it.servicesList.isNotEmpty()) {
-                Log.d(TAG, "Execute callback when data is returned")
+                Log.d(TAG,"ServiceList size is ${it.servicesList.size}")
                 //update actual data holder
                 Log.d(TAG,"Retrieved key is ${it.servicesList[0].first}")
                 Log.d(TAG,"Full set of keys are ${expandableListDetail.keys}")
-                if (expandableListDetail.containsKey(it.servicesList[0].first)) {
-                    Log.d(TAG,"Found key")
-                    setServicesInExpendableListDetail(it.servicesList[0].first,it.servicesList[0].second.Services)
-                    busScheduleListRefreshObservable?.postValue(BusScheduleRefreshStatus(true))
+                for (i in it.servicesList){
+                    if (expandableListDetail.containsKey(i.first)) {
+                        Log.d(TAG,"Found key")
+                        setServicesInExpendableListDetail(i.first,i.second.Services)
+                    }
                 }
+                busScheduleListRefreshObservable?.postValue(BusScheduleRefreshStatus(true))
             } else {
                 busScheduleListRefreshObservable?.postValue(BusScheduleRefreshStatus(false))
             }
@@ -138,5 +140,10 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         nearestBusRepository = null
         busStopCodeRepository = null
         busScheduleRepository = null
+    }
+
+    //destroy observables
+    fun destroyDisposable(){
+        busScheduleRepository?.destroyDisposable()
     }
 }

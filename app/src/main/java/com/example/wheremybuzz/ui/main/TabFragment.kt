@@ -78,7 +78,7 @@ class TabFragment : Fragment() {
             allowRefresh = false
             Log.d(TAG, "On resume app here")
             val list = getCurrentExpandedList()
-            if (!list.isNullOrEmpty()){
+            if (!list.isNullOrEmpty()) {
                 Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
                 viewModel?.refreshExpandedBusStops(list)?.observe(viewLifecycleOwner,
                     Observer<BusScheduleRefreshStatus> { BusScheduleRefreshStatus ->
@@ -159,7 +159,6 @@ class TabFragment : Fragment() {
                 for (i in nearestBusStopMetaList.BusStopMetaList.indices) {
                     val busStopArrayList: MutableList<StoredBusMeta> = ArrayList()
                     //val serviceArrayList: MutableList<Service> = ArrayList()
-                    val fakeService: Service? = null
                     val geoLocation = GeoLocation(
                         nearestBusStopsList[i]!!.latitude,
                         nearestBusStopsList[i]!!.longitude
@@ -275,11 +274,11 @@ class TabFragment : Fragment() {
         shimmeringLayoutView?.visibility = View.INVISIBLE
     }
 
-    //method that will check for the expanded items and add into array
-    private fun getCurrentExpandedList(): List<BusStopNameAndCode>? {
+    //method that will check for the expanded items and add into hashmap <busStopCode,busStopName>
+    private fun getCurrentExpandedList(): HashMap<String, String>? {
         val groupCount = expandableListAdapter?.groupCount ?: return null
         Log.d(TAG, "total number of group count $groupCount")
-        val visibleExpandedList: MutableList<BusStopNameAndCode> = ArrayList()
+        val visibleExpandedList: HashMap<String, String> = hashMapOf()
         for (i in 0 until groupCount) {
             val expanded = expandableListView?.isGroupExpanded(i) ?: false
             Log.d(TAG, "group position number $i is $expanded")
@@ -288,10 +287,12 @@ class TabFragment : Fragment() {
                     i, firstIndex
                 ) as StoredBusMeta).BusStopCode
                 val busStopName = (expandableListAdapter?.getGroup(
-                    i)
-                ).toString()
-                if (busStopCode.isNotEmpty() && busStopName.isNotEmpty()){
-                    visibleExpandedList.add(BusStopNameAndCode(busStopCode, busStopName))
+                    i
+                )
+                        ).toString()
+                if (busStopCode.isNotEmpty() && busStopName.isNotEmpty()) {
+                    visibleExpandedList.put(busStopCode, busStopName)
+                    //visibleExpandedList.add(BusStopNameAndCode(busStopCode, busStopName))
                 }
             }
         }
@@ -312,6 +313,12 @@ class TabFragment : Fragment() {
 
         private val location: String = "1.380308, 103.741256"
         private val firstIndex: Int = 0
+    }
+
+    override fun onPause() {
+        viewModel?.destroyDisposable()
+        cacheHelper = null
+        super.onPause()
     }
 
     override fun onDestroy() {
