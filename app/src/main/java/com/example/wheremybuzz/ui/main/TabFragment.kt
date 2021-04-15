@@ -24,6 +24,8 @@ import com.example.wheremybuzz.utils.TimeUtil
 import com.example.wheremybuzz.utils.helper.SharedPreferenceHelper
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 
 class TabFragment : Fragment() {
@@ -38,9 +40,11 @@ class TabFragment : Fragment() {
     var viewModel: NearestBusStopsViewModel? = null
     private val timeUtil: TimeUtil = TimeUtil
     lateinit var sharedPreference: SharedPreferenceHelper
-    private var cacheHelper: CacheHelper? = null
+    lateinit var cacheHelper: CacheHelper
     private val forceUpdateCache = false
     private var allowRefresh = false
+    private val executorService: ExecutorService = Executors.newFixedThreadPool(4)
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,8 +60,8 @@ class TabFragment : Fragment() {
             )
         if (position == 0) {
             // check if busStopCode is empty or missing, retrieve and save to cache
-            cacheHelper = CacheManager.initializeCacheHelper
-            if (forceUpdateCache || !cacheHelper?.cacheExists()!! || timeUtil.checkTimeStampExceed3days(
+            cacheHelper = CacheManager.initializeCacheHelper!!
+            if (forceUpdateCache || !cacheHelper.cacheExists() || timeUtil.checkTimeStampExceed3days(
                     sharedPreference.getSharedPreference()
                 )
             ) {
@@ -73,26 +77,26 @@ class TabFragment : Fragment() {
     }
 
     override fun onResume() {
-        super.onResume()
         if (position == 0 && allowRefresh) {
             allowRefresh = false
             Log.d(TAG, "On resume app here")
-            val list = getCurrentExpandedList()
+            var list: HashMap<String, String>? = getCurrentExpandedList()
             if (!list.isNullOrEmpty()) {
                 Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
-                viewModel?.refreshExpandedBusStops(list)?.observe(viewLifecycleOwner,
-                    Observer<BusScheduleRefreshStatus> { BusScheduleRefreshStatus ->
-                        Log.d(TAG, "Listener here ${BusScheduleRefreshStatus.refreshstatus}")
-                        if (BusScheduleRefreshStatus.refreshstatus) {
-                            Log.d(TAG, "Do refresh here")
-                            updateExpandableListAdapter()
-                        }
-                        allowRefresh = true
-                    })
+                    viewModel?.refreshExpandedBusStops(list)?.observe(viewLifecycleOwner,
+                        Observer<BusScheduleRefreshStatus> { BusScheduleRefreshStatus ->
+                            Log.d(TAG, "Listener here ${BusScheduleRefreshStatus.refreshstatus}")
+                            if (BusScheduleRefreshStatus.refreshstatus) {
+                                Log.d(TAG, "Do refresh here")
+                                updateExpandableListAdapter()
+                            }
+                            allowRefresh = true
+                        })
             }
             //add logic to reload whichever opened tabs
             //enableShimmer()
         }
+        super.onResume()
     }
 
     override fun onCreateView(
@@ -291,7 +295,7 @@ class TabFragment : Fragment() {
                 )
                         ).toString()
                 if (busStopCode.isNotEmpty() && busStopName.isNotEmpty()) {
-                    visibleExpandedList.put(busStopCode, busStopName)
+                    visibleExpandedList[busStopCode] = busStopName
                     //visibleExpandedList.add(BusStopNameAndCode(busStopCode, busStopName))
                 }
             }
@@ -317,7 +321,7 @@ class TabFragment : Fragment() {
 
     override fun onPause() {
         viewModel?.destroyDisposable()
-        cacheHelper = null
+        //cacheHelper = null
         super.onPause()
     }
 

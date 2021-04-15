@@ -9,16 +9,20 @@ import com.example.wheremybuzz.model.*
 import com.example.wheremybuzz.repository.BusScheduleRepository
 import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
-import java.util.HashMap
+import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 
 class NearestBusStopsViewModel(application: Application) : AndroidViewModel(application) {
-    //private var nearestBusStopsListObservable: LiveData<List<NearestBusStopsResponse>>? = null
-    private var nearestBusStopsGeoListObservable: LiveData<BusStopMeta>? = null
+    private var nearestBusStopsGeoListObservable: MutableLiveData<BusStopMeta>? = null
     private var busStopCodeListObservable: LiveData<BusStopCode>? = null
     private var busScheduleListObservable: LiveData<BusScheduleMeta>? = null
-    private var busScheduleListRefreshObservable: MutableLiveData<BusScheduleRefreshStatus>? = null
+    lateinit var busScheduleListRefreshObservable: MutableLiveData<BusScheduleRefreshStatus>
     private val TAG = "NearestBusStopsView"
+    private val executorService: ExecutorService = Executors.newFixedThreadPool(4)
+    private val executorService2: ExecutorService = Executors.newFixedThreadPool(4)
+
 
     private var expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
 
@@ -78,7 +82,12 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun getNearestBusStopsGeoListObservable(location: String): LiveData<BusStopMeta>? {
-        nearestBusStopsGeoListObservable = nearestBusRepository!!.getNearestBusStops(location)
+        nearestBusStopsGeoListObservable = MutableLiveData()
+        executorService2.submit {
+            nearestBusRepository!!.getNearestBusStops(location) {
+                nearestBusStopsGeoListObservable!!.postValue(it)
+            }
+        }
         return nearestBusStopsGeoListObservable
     }
 
@@ -113,30 +122,36 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     fun refreshExpandedBusStops(busStopList: HashMap<String,String>): LiveData<BusScheduleRefreshStatus>? {
         //busScheduleListRefreshObservable = busScheduleRepository!!.getBusScheduleMetaRefreshList(busStopList)
         busScheduleListRefreshObservable = MutableLiveData()
-        //TODO add callback method here
-        busScheduleRepository?.getBusScheduleMetaRefreshList(busStopList) { it ->
-            if (it.servicesList.isNotEmpty()) {
-                Log.d(TAG,"ServiceList size is ${it.servicesList.size}")
-                //update actual data holder
-                Log.d(TAG,"Retrieved key is ${it.servicesList[0].first}")
-                Log.d(TAG,"Full set of keys are ${expandableListDetail.keys}")
-                for (i in it.servicesList){
-                    if (expandableListDetail.containsKey(i.first)) {
-                        Log.d(TAG,"Found key")
-                        setServicesInExpendableListDetail(i.first,i.second.Services)
+        executorService.submit{
+            Log.d(TAG,"Current thread executing is ${Thread.currentThread().name}")
+            //TODO add callback method here
+            busScheduleRepository?.getBusScheduleMetaRefreshList(busStopList) { it ->
+                if (it.servicesList.isNotEmpty()) {
+                    Log.d(TAG, "ServiceList size is ${it.servicesList.size}")
+                    //update actual data holder
+                    Log.d(TAG, "Retrieved key is ${it.servicesList[0].first}")
+                    Log.d(TAG, "Full set of keys are ${expandableListDetail.keys}")
+                    for (i in it.servicesList) {
+                        if (expandableListDetail.containsKey(i.first)) {
+                            Log.d(TAG, "Found key")
+                            setServicesInExpendableListDetail(i.first, i.second.Services)
+                        }
                     }
+                    Log.d(TAG,"PostValue observer here")
+                    busScheduleListRefreshObservable.postValue(BusScheduleRefreshStatus(true))
+                } else {
+                    busScheduleListRefreshObservable.postValue(BusScheduleRefreshStatus(false))
                 }
-                busScheduleListRefreshObservable?.postValue(BusScheduleRefreshStatus(true))
-            } else {
-                busScheduleListRefreshObservable?.postValue(BusScheduleRefreshStatus(false))
             }
         }
+        Log.d(TAG,"Return observer here")
         return busScheduleListRefreshObservable
     }
 
 
     //destroy all references of repositories
     fun destroyRepositories() {
+        executorService.shutdown()
         nearestBusRepository = null
         busStopCodeRepository = null
         busScheduleRepository = null

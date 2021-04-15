@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.model.BusScheduleMetaRefresh
 import com.example.wheremybuzz.model.BusStopMeta
 import com.example.wheremybuzz.model.InnerBusStopMeta
 import com.example.wheremybuzz.model.NearestBusStopsResponse
@@ -28,12 +29,12 @@ class NearestBusRepository {
         .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
     private val googleApiKey: String = ai.metaData["com.google.android.geo.API_KEY"] as String
 
-    fun getNearestBusStops(location: String): LiveData<BusStopMeta>? {
-        val data: MutableLiveData<BusStopMeta> =
-            MutableLiveData()
+    fun getNearestBusStops(
+        location: String,
+        viewModelCallBack: (BusStopMeta) -> Unit
+    ) {
         var innerBusStopMeta: InnerBusStopMeta?
         val busStopMetaList: MutableList<InnerBusStopMeta?>? = mutableListOf()
-        var busStopMeta: BusStopMeta?
 
         val service = GoogleRetrofitHelper.nearestBusStopApiService
         val call = service.getNearestBusStops(
@@ -66,23 +67,21 @@ class NearestBusRepository {
                             InnerBusStopMeta(busStopName, busStopLatitude, busStopLongtitude, 0)
                         busStopMetaList?.add(innerBusStopMeta)
                     }
-                    busStopMeta = BusStopMeta(busStopMetaList)
-                    data.postValue(busStopMeta)
+                    viewModelCallBack(BusStopMeta(busStopMetaList))
+                    //data.postValue(busStopMeta)
                 } else {
                     Log.d(TAG, "Status code is " + response.code())
-                    busStopMeta = BusStopMeta(busStopMetaList)
-                    data.postValue(busStopMeta)
-
+//                    data.postValue(busStopMeta)
+                    viewModelCallBack(BusStopMeta(busStopMetaList))
                 }
             }
 
             override fun onFailure(call: Call<NearestBusStopsResponse>, t: Throwable) {
                 Log.d(TAG, "Encountered error " + t.message)
-                busStopMeta = BusStopMeta(busStopMetaList)
-                data.postValue(busStopMeta)
+                //data.postValue(busStopMeta)
+                viewModelCallBack(BusStopMeta(busStopMetaList))
             }
         })
-        return data
     }
     //fix this later using dagger injection https://stackoverflow.com/questions/45840793/repository-module-implementation-with-context
 //        val ai = context!!.packageManager
