@@ -31,6 +31,10 @@ object LtaRetrofitHelper {
         retrofit.create(BusStopsCodeApiService::class.java)
     }
 
+    val busStopsCodeApiServiceWithRx: BusStopsCodeApiService by lazy {
+        retrofitWithRx.create(BusStopsCodeApiService::class.java)
+    }
+
     val busScheduleApiService: BusScheduleApiService by lazy {
         retrofit.create(BusScheduleApiService::class.java)
     }

@@ -1,6 +1,5 @@
 package com.example.wheremybuzz.ui.main
 
-//import com.example.wheremybuzz.data.ExpandableListDataPump.data
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,12 +14,12 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
-import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
-import com.example.wheremybuzz.model.*
-import com.example.wheremybuzz.utils.helper.CacheHelper
+import com.example.wheremybuzz.model.StatusEnum
+import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.utils.CacheManager
 import com.example.wheremybuzz.utils.SharedPreferenceManager
 import com.example.wheremybuzz.utils.TimeUtil
+import com.example.wheremybuzz.utils.helper.CacheHelper
 import com.example.wheremybuzz.utils.helper.SharedPreferenceHelper
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
@@ -66,9 +65,7 @@ class TabFragment : Fragment() {
             ) {
                 Log.d(TAG, "Cache file does not exists or expired")
                 //let background thread handle the heavy workload
-                Thread(Runnable {
-                    viewModel?.retrieveBusStopCodesAndSaveCache()
-                }).start()
+                viewModel?.retrieveBusStopCodesAndSaveCache()
                 sharedPreference.setSharedPreference()
             }
             observeNearestBusStopsModel()
@@ -83,9 +80,9 @@ class TabFragment : Fragment() {
             if (!list.isNullOrEmpty()) {
                 Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
                 viewModel?.refreshExpandedBusStops(list) { busScheduleRefreshStatus ->
-                    if (busScheduleRefreshStatus.refreshstatus){
+                    if (busScheduleRefreshStatus.refreshstatus) {
                         allowRefresh = true
-                    }else{
+                    } else {
                         //show error placeholder page
                     }
                 }
@@ -228,7 +225,6 @@ class TabFragment : Fragment() {
                         ).toString()
                 if (busStopCode.isNotEmpty() && busStopName.isNotEmpty()) {
                     visibleExpandedList[busStopCode] = busStopName
-                    //visibleExpandedList.add(BusStopNameAndCode(busStopCode, busStopName))
                 }
             }
         }
@@ -253,7 +249,6 @@ class TabFragment : Fragment() {
 
     override fun onPause() {
         viewModel?.destroyDisposable()
-        //cacheHelper = null
         super.onPause()
     }
 

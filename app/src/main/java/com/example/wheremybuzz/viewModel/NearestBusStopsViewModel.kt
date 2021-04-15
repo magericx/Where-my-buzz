@@ -60,7 +60,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     }
 
     //TODO Add implementation for services
-    fun setServicesInExpendableListDetail(key: String, serviceList: List<Service>) {
+    private fun setServicesInExpendableListDetail(key: String, serviceList: List<Service>) {
         //Log.d(TAG, "expandableListDetails is $expandableListDetail")
         if (expandableListDetail.containsKey(key)) {
             val currentExpandableHashMap = expandableListDetail[key]
@@ -125,8 +125,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                         )
                     }
                     nearestBusStopsGeoListObservable.postValue(StatusEnum.Success)
-                }
-                else{
+                } else {
                     nearestBusStopsGeoListObservable.postValue(StatusEnum.UnknownError)
                 }
             }
@@ -150,7 +149,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                     busStopName,
                     it.busStopCode
                 )
-                getBusScheduleListObservable(it.busStopCode.toLong(),busStopName)
+                getBusScheduleListObservable(it.busStopCode.toLong(), busStopName)
             }
         }
     }
@@ -158,13 +157,14 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     //if API call is success, update temp cache
     fun retrieveBusStopCodesAndSaveCache() {
         executorService2.submit {
-            if (busStopCodeRepository!!.retrieveBusStopCodesToCache() != null) {
-                busStopCodeTempCache = busStopCodeRepository!!.retrieveBusStopCodesToCache()
+            busStopCodeRepository!!.retrieveBusStopCodesToCache { busStopsCodesResponse ->
+                busStopCodeTempCache = busStopsCodesResponse
+                Log.d(TAG, "Retrieved cache is $busStopCodeTempCache")
             }
         }
     }
 
-    fun getBusScheduleListObservable(
+    private fun getBusScheduleListObservable(
         busStopCode: Long,
         busStopName: String
     ) {
@@ -178,7 +178,10 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    fun refreshExpandedBusStops(busStopList: HashMap<String, String> , viewCallBack: (BusScheduleRefreshStatus) -> Unit){
+    fun refreshExpandedBusStops(
+        busStopList: HashMap<String, String>,
+        viewCallBack: (BusScheduleRefreshStatus) -> Unit
+    ) {
         //busScheduleListRefreshObservable = busScheduleRepository!!.getBusScheduleMetaRefreshList(busStopList)
         //busScheduleListRefreshObservable = MutableLiveData()
         executorService.submit {
@@ -204,8 +207,6 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                 }
             }
         }
-        Log.d(TAG, "Return observer here")
-        //return busScheduleListRefreshObservable
     }
 
 

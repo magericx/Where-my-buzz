@@ -4,19 +4,20 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.ApiConstants
 import com.example.wheremybuzz.MyApplication
-import com.example.wheremybuzz.model.BusScheduleMetaRefresh
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.model.Value
-import com.example.wheremybuzz.utils.helper.CacheHelper
 import com.example.wheremybuzz.utils.CacheManager
+import com.example.wheremybuzz.utils.helper.CacheHelper
 import com.example.wheremybuzz.utils.helper.LtaRetrofitHelper
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import retrofit2.Call
 import retrofit2.Response
+import java.util.*
 
 class BusStopCodeRepository {
     private val TAG: String = "BusStopCodeRepository"
@@ -65,7 +66,7 @@ class BusStopCodeRepository {
                     TAG,
                     "Bus stop not found in temporary cache and persistent cache, calling API now to retrieve"
                 )
-                searchForBusStopCode( 0, busStopName, latitude, longtitude){
+                searchForBusStopCode(0, busStopName, latitude, longtitude) {
 
                 }
             }
@@ -74,14 +75,14 @@ class BusStopCodeRepository {
                 TAG,
                 "Temporary cache & persistent cache not available"
             )
-            searchForBusStopCode(0, busStopName, latitude, longtitude){
+            searchForBusStopCode(0, busStopName, latitude, longtitude) {
 
             }
         }
     }
 
     fun searchForBusStopCode(
-         skip: Int, busStopName: String,
+        skip: Int, busStopName: String,
         latitude: Double,
         longtitude: Double,
         viewModelCallBack: (BusStopCode) -> Unit
@@ -144,7 +145,7 @@ class BusStopCodeRepository {
                                 busStopName,
                                 latitude,
                                 longtitude
-                            ){
+                            ) {
 
                             }
                         }
@@ -170,53 +171,37 @@ class BusStopCodeRepository {
     }
 
     //retrieve bus stop code from API and store into cache file
-    fun retrieveBusStopCodesToCache(): BusStopsCodeResponse? {
-        val service = LtaRetrofitHelper.busStopsCodeApiService
+    fun retrieveBusStopCodesToCache(viewModelCallBack: (BusStopsCodeResponse) -> Unit) {
+        val service = LtaRetrofitHelper.busStopsCodeApiServiceWithRx
         val busStopCodesList: MutableList<Value> = mutableListOf()
         val skip = 0
         val increment = ApiConstants.BUS_STOP_CODE_INCREMENT
         val max = ApiConstants.BUS_STOP_CODE_MAX
-        var busStopCodeCache: BusStopsCodeResponse? = null
+        //var busStopCodeCache: BusStopsCodeResponse? = null
+        val requests = ArrayList<Observable<*>>()
 
-        var i = skip
-        while (i < max) {
-            println("Now at $i")
-            val call = service.getBusStopsCode(
-                ltaApiKey, i
+        for (i in skip..max step increment) {
+            requests.add(
+                service.getBusStopsCodeObservable(
+                    ltaApiKey, i
+                )
             )
-            call.enqueue(object : retrofit2.Callback<BusStopsCodeResponse> {
-                override fun onResponse(
-                    call: Call<BusStopsCodeResponse>,
-                    response: Response<BusStopsCodeResponse>
-                ) {
-                    Log.d(TAG, "Status code is ${response.code()}")
-                    Log.d(TAG, "Content is ${response.body()}")
-                    if (response.code() == 200) {
-                        val busStopCodeResponse = response.body()?.value
-                        if (!busStopCodeResponse.isNullOrEmpty()) {
-                            //writeJSONtoFile(response.body())
-                            busStopCodesList.addAll(busStopCodeResponse)
-                        }
-                        if (i == max) {
-                            Log.d(TAG, "Write to cache")
-                            cacheHelper.writeJSONtoFile(BusStopsCodeResponse(busStopCodesList))
-                            busStopCodeCache = BusStopsCodeResponse(busStopCodesList)
-                        }
-                    } else {
-                        Log.d(TAG, "Status code is " + response.code())
-                        Log.d(TAG, "Message is " + response.message())
-                        Log.d(TAG, "Body is " + response.body())
-
-                    }
-                }
-
-                override fun onFailure(call: Call<BusStopsCodeResponse>, t: Throwable) {
-                    Log.d(TAG, "Encountered error " + t.message)
-                }
-
-            })
-            i += increment
         }
-        return busStopCodeCache
+        Observable
+            .zip(requests) {
+                for (i in it.indices) {
+                    val busStopCodeResponse = (it[i] as BusStopsCodeResponse).value
+                    busStopCodesList.addAll(busStopCodeResponse)
+                }
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeOn(Schedulers.io())
+            .subscribe({
+                cacheHelper.writeJSONtoFile(BusStopsCodeResponse(busStopCodesList))
+                //busStopCodeCache = BusStopsCodeResponse(busStopCodesList)
+                viewModelCallBack(BusStopsCodeResponse(busStopCodesList))
+            }) {
+                Log.d(TAG, "Error occured due to $it")
+            }
     }
 }

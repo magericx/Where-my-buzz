@@ -83,8 +83,4 @@ class NearestBusRepository {
             }
         })
     }
-    //fix this later using dagger injection https://stackoverflow.com/questions/45840793/repository-module-implementation-with-context
-//        val ai = context!!.packageManager
-//            .getApplicationInfo(context!!.packageName, PackageManager.GET_META_DATA)
-//        val google_api_key: String = ai.metaData["com.google.android.geo.API_KEY"] as String
 }
