@@ -80,7 +80,7 @@ class TabFragment : Fragment() {
         if (position == 0 && allowRefresh) {
             allowRefresh = false
             Log.d(TAG, "On resume app here")
-            var list: HashMap<String, String>? = getCurrentExpandedList()
+            val list: HashMap<String, String>? = getCurrentExpandedList()
             if (!list.isNullOrEmpty()) {
                 Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
                     viewModel?.refreshExpandedBusStops(list)?.observe(viewLifecycleOwner,

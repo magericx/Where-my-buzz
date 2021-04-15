@@ -29,9 +29,7 @@ class BusScheduleRepository {
     private var disposables = CompositeDisposable()
 
     //fetch for single bus stop
-    fun getBusScheduleMetaList(busStopCode: Long): LiveData<BusScheduleMeta>? {
-        val data: MutableLiveData<BusScheduleMeta> =
-            MutableLiveData()
+    fun getBusScheduleMetaList(busStopCode: Long , viewModelCallBack: (BusScheduleMeta) -> Unit){
         val service = LtaRetrofitHelper.busScheduleApiService
         val call = service.getBusScheduleMeta(
             ltaApiKey, busStopCode
@@ -45,7 +43,7 @@ class BusScheduleRepository {
                     val busStopCodeResponse = response.body()
                     if ((busStopCodeResponse!!.BusStopCode.isNotEmpty()) && (!busStopCodeResponse.Services.isNullOrEmpty())) {
                         Log.d(TAG, "Found bus schedules for bus stop code $busStopCode")
-                        data.postValue(response.body())
+                        viewModelCallBack(response.body()!!)
                     }
                 }
             }
@@ -54,7 +52,6 @@ class BusScheduleRepository {
                 Log.d(TAG, "Encountered error " + t?.message)
             }
         })
-        return data
     }
 
     //fetch for all the bus stops that require refresh

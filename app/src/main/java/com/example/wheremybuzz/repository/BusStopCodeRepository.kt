@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.ApiConstants
 import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.model.BusScheduleMetaRefresh
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.model.Value
@@ -30,11 +31,12 @@ class BusStopCodeRepository {
         busStopCodeTempCache: BusStopsCodeResponse?,
         busStopName: String,
         latitude: Double,
-        longtitude: Double
-    ): LiveData<BusStopCode>? {
+        longtitude: Double,
+        viewModelCallBack: (BusStopCode) -> Unit
+    ) {
         var found = false
-        val data: MutableLiveData<BusStopCode> =
-            MutableLiveData()
+//        val data: MutableLiveData<BusStopCode> =
+//            MutableLiveData()
         val cacheData: BusStopsCodeResponse? = busStopCodeTempCache ?: cacheHelper.readJSONFile()
         if (cacheData != null) {
             for (i in cacheData.value.indices) {
@@ -51,7 +53,8 @@ class BusStopCodeRepository {
                             TAG,
                             "Found bus stop code is " + cacheData.value[i].BusStopCode + " for bus stop " + busStopName
                         )
-                        data.postValue(BusStopCode(cacheData.value[i].BusStopCode))
+                        //data.postValue(BusStopCode(cacheData.value[i].BusStopCode))
+                        viewModelCallBack(BusStopCode(cacheData.value[i].BusStopCode))
                         found = true
                         break
                     }
@@ -62,35 +65,26 @@ class BusStopCodeRepository {
                     TAG,
                     "Bus stop not found in temporary cache and persistent cache, calling API now to retrieve"
                 )
-                searchForBusStopCode(data, 0, busStopName, latitude, longtitude)
+                searchForBusStopCode( 0, busStopName, latitude, longtitude){
+
+                }
             }
         } else {
             Log.d(
                 TAG,
                 "Temporary cache & persistent cache not available"
             )
-            searchForBusStopCode(data, 0, busStopName, latitude, longtitude)
+            searchForBusStopCode(0, busStopName, latitude, longtitude){
+
+            }
         }
-        return data
     }
 
-//    fun getBusStopCode(
-//        busStopName: String,
-//        latitude: Double,
-//        longtitude: Double
-//    ): LiveData<BusStopCode>? {
-//        val data: MutableLiveData<BusStopCode> =
-//            MutableLiveData()
-//
-//        searchForBusStopCode(data, 0, busStopName, latitude, longtitude)
-//        return data
-//    }
-
-
     fun searchForBusStopCode(
-        observerList: MutableLiveData<BusStopCode>, skip: Int, busStopName: String,
+         skip: Int, busStopName: String,
         latitude: Double,
-        longtitude: Double
+        longtitude: Double,
+        viewModelCallBack: (BusStopCode) -> Unit
     ) {
         val service = LtaRetrofitHelper.busStopsCodeApiService
         val call = service.getBusStopsCode(
@@ -99,8 +93,8 @@ class BusStopCodeRepository {
         var found = false
 
         if (!found && (skip == 5500)) {
-            //val busStopsCodeResponse = BusStopsCodeResponse(value = listOf())
-            observerList.postValue(BusStopCode(""))
+            viewModelCallBack(BusStopCode(""))
+            //observerList.postValue(BusStopCode(""))
         }
 
         call.enqueue(object : retrofit2.Callback<BusStopsCodeResponse> {
@@ -133,7 +127,8 @@ class BusStopCodeRepository {
                                         TAG,
                                         "Found bus stop code is " + busStopCodeResponse[i].BusStopCode + " for bus stop " + busStopName
                                     )
-                                    observerList.postValue(BusStopCode(busStopCodeResponse[i].BusStopCode))
+                                    //observerList.postValue(BusStopCode(busStopCodeResponse[i].BusStopCode))
+                                    viewModelCallBack(BusStopCode(busStopCodeResponse[i].BusStopCode))
                                     Log.d(
                                         TAG,
                                         "Retrieved from cache " + cacheHelper.readJSONFile()?.value
@@ -145,12 +140,13 @@ class BusStopCodeRepository {
                         }
                         if (!found) {
                             searchForBusStopCode(
-                                observerList,
                                 skip + 500,
                                 busStopName,
                                 latitude,
                                 longtitude
-                            )
+                            ){
+
+                            }
                         }
                     }
                     //data.postValue(busStopMeta)
