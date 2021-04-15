@@ -12,6 +12,7 @@ import androidx.annotation.Nullable
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.StatusEnum
@@ -33,6 +34,7 @@ class TabFragment : Fragment() {
 
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     var expandableListView: ExpandableListView? = null
+    lateinit var swipeContainer: SwipeRefreshLayout
     lateinit var expandableListAdapter: ExpandableListAdapter
     lateinit var expandableListTitle: List<String>
     var viewModel: NearestBusStopsViewModel? = null
@@ -76,17 +78,7 @@ class TabFragment : Fragment() {
         if (position == 0 && allowRefresh) {
             allowRefresh = false
             Log.d(TAG, "On resume app here")
-            val list: HashMap<String, String>? = getCurrentExpandedList()
-            if (!list.isNullOrEmpty()) {
-                Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
-                viewModel?.refreshExpandedBusStops(list) { busScheduleRefreshStatus ->
-                    if (busScheduleRefreshStatus.refreshstatus) {
-                        allowRefresh = true
-                    } else {
-                        //show error placeholder page
-                    }
-                }
-            }
+            refreshExpandedList(false)
         }
         super.onResume()
     }
@@ -97,11 +89,13 @@ class TabFragment : Fragment() {
     ): View {
         val view: View = inflater.inflate(R.layout.fragment_tab, container, false)
         shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
+        swipeContainer = view.findViewById(R.id.swipeContainer)
         if (position == 0) {
             enableShimmer()
         } else {
             //position == 1, hide the shimmer
             hideShimmeringLayout()
+            swipeContainer.visibility = View.INVISIBLE
         }
         expandableListView = view.findViewById(R.id.expandableListView)
         Log.d(TAG, "debug expendable $expandableListView")
@@ -144,6 +138,19 @@ class TabFragment : Fragment() {
             ).show()
             false
         }
+        if (position == 0) {
+            swipeContainer.setOnRefreshListener { // Your code to refresh the list here.
+                // Make sure you call swipeContainer.setRefreshing(false)
+                // once the network request has completed successfully.
+                refreshExpandedList(true)
+            }
+            swipeContainer.setColorSchemeResources(
+                android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light
+            )
+        }
     }
 
     private fun observeBusStopCodeModel(
@@ -163,10 +170,6 @@ class TabFragment : Fragment() {
         expandableListAdapter = viewModel?.setUpExpandableListAdapter()!!
         expandableListTitle = viewModel?.getExpandableListTitle()!!
         expandableListView!!.setAdapter(expandableListAdapter)
-    }
-
-    private fun updateExpandableListAdapter() {
-        viewModel?.updateExpandableListAdapter()
     }
 
     private fun observeNearestBusStopsModel() {
@@ -207,9 +210,32 @@ class TabFragment : Fragment() {
         shimmeringLayoutView?.visibility = View.INVISIBLE
     }
 
+    private fun refreshExpandedList(swipeRefresh: Boolean) {
+        val list: HashMap<String, String>? = getCurrentExpandedList()
+        if (!list.isNullOrEmpty()) {
+            Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
+            viewModel?.refreshExpandedBusStops(list) { busScheduleRefreshStatus ->
+                if (busScheduleRefreshStatus.refreshstatus) {
+                    if (!swipeRefresh) {
+                        allowRefresh = true
+                    }
+                } else {
+                    //check if nothing retrieved due to network, show error placeholder page
+
+                }
+                //swipeContainer.isRefreshing = false
+            }
+        }
+        else{
+            if (swipeRefresh) {
+                swipeContainer.isRefreshing = false
+            }
+        }
+    }
+
     //method that will check for the expanded items and add into hashmap <busStopCode,busStopName>
     private fun getCurrentExpandedList(): HashMap<String, String>? {
-        val groupCount = expandableListAdapter.groupCount ?: return null
+        val groupCount = expandableListAdapter.groupCount
         Log.d(TAG, "total number of group count $groupCount")
         val visibleExpandedList: HashMap<String, String> = hashMapOf()
         for (i in 0 until groupCount) {

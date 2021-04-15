@@ -203,6 +203,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                     updateExpandableListAdapter()
                     viewCallBack(BusScheduleRefreshStatus(true))
                 } else {
+                    Log.d(TAG,"Trigger callback here")
                     viewCallBack(BusScheduleRefreshStatus(false))
                 }
             }

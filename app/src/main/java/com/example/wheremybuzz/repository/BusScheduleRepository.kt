@@ -29,7 +29,7 @@ class BusScheduleRepository {
     private var disposables = CompositeDisposable()
 
     //fetch for single bus stop
-    fun getBusScheduleMetaList(busStopCode: Long , viewModelCallBack: (BusScheduleMeta) -> Unit){
+    fun getBusScheduleMetaList(busStopCode: Long, viewModelCallBack: (BusScheduleMeta) -> Unit) {
         val service = LtaRetrofitHelper.busScheduleApiService
         val call = service.getBusScheduleMeta(
             ltaApiKey, busStopCode
@@ -64,51 +64,53 @@ class BusScheduleRepository {
         val requests = ArrayList<Observable<*>>()
 
         //setup observable based on items that needs to be refreshed
-        busStopMap.forEach { (key, value) ->
-            requests.add(
-                service.getBusScheduleMetaObservable(
-                    ltaApiKey, key.toLong()
+        if (busStopMap.isNotEmpty()) {
+            busStopMap.forEach { (key, value) ->
+                requests.add(
+                    service.getBusScheduleMetaObservable(
+                        ltaApiKey, key.toLong()
+                    )
                 )
-            )
-        }
-        //do zipping of the results as a whole here
-        Observable
-            .zip(requests) {
-                // do something with those results and emit new event
-                Log.d(TAG, "Retrieved list size is ${it.size}")
-                for (i in it.indices) {
-                    val busScheduleMeta = it[i] as BusScheduleMeta
-                    val busStopCode = busScheduleMeta.BusStopCode
-                    if (busStopMap.contains(busStopCode)) {
-                        if (busStopMap[busStopCode] != null) {
-                            busStopMap[busStopCode].let { busStopName ->
-                                retrievedBusScheduleList.add(
-                                    i,
-                                    Pair(busStopName!!, busScheduleMeta)
-                                )
+            }
+            //do zipping of the results as a whole here
+            Observable
+                .zip(requests) {
+                    // do something with those results and emit new event
+                    Log.d(TAG, "Retrieved list size is ${it.size}")
+                    for (i in it.indices) {
+                        val busScheduleMeta = it[i] as BusScheduleMeta
+                        val busStopCode = busScheduleMeta.BusStopCode
+                        if (busStopMap.contains(busStopCode)) {
+                            if (busStopMap[busStopCode] != null) {
+                                busStopMap[busStopCode].let { busStopName ->
+                                    retrievedBusScheduleList.add(
+                                        i,
+                                        Pair(busStopName!!, busScheduleMeta)
+                                    )
+                                }
                             }
                         }
                     }
+                    //Any()// <-- Here we emit just new empty Object(), but you can emit anything
                 }
-                //Any()// <-- Here we emit just new empty Object(), but you can emit anything
-            }
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribeOn(Schedulers.io())
-            // Will be triggered if all requests will end successfully (4xx and 5xx also are successful requests too)
-            .subscribe({
-                viewModelCallBack(BusScheduleMetaRefresh(retrievedBusScheduleList))
-                Log.d(TAG, "All api retrieval is done $it ")
-                //Do something on successful completion of all requests
-            }) {
-                //Do something on error completion of requests
-                Log.d(TAG, "Error due to $it")
-                viewModelCallBack(BusScheduleMetaRefresh(retrievedBusScheduleList))
-            }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                // Will be triggered if all requests will end successfully (4xx and 5xx also are successful requests too)
+                .subscribe({
+                    viewModelCallBack(BusScheduleMetaRefresh(retrievedBusScheduleList))
+                    Log.d(TAG, "All api retrieval is done $it ")
+                    //Do something on successful completion of all requests
+                }) {
+                    //Do something on error completion of requests
+                    Log.d(TAG, "Error due to $it")
+                    viewModelCallBack(BusScheduleMetaRefresh(retrievedBusScheduleList))
+                }
+        }
         //disposables.add(disposable)
     }
 
-    fun destroyDisposable(){
-        if (!disposables.isDisposed){
+    fun destroyDisposable() {
+        if (!disposables.isDisposed) {
             disposables.dispose()
         }
     }
