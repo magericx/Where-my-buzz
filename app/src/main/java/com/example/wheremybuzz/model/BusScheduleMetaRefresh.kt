@@ -8,7 +8,3 @@ data class BusScheduleRefreshStatus(
     val refreshstatus: Boolean
 )
 
-data class BusStopNameAndCode(
-    val busStopCode:String,
-    val busStopName:String
-)

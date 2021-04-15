@@ -4,7 +4,6 @@ package com.example.wheremybuzz.adapter
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Typeface
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,7 +12,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import com.example.wheremybuzz.R
-import com.example.wheremybuzz.model.FinalBusMeta
 import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.utils.TimeUtil
 import java.util.*

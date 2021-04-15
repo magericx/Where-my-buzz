@@ -2,9 +2,11 @@ package com.example.wheremybuzz.viewModel
 
 import android.app.Application
 import android.util.Log
+import android.widget.ExpandableListAdapter
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.*
 import com.example.wheremybuzz.repository.BusScheduleRepository
 import com.example.wheremybuzz.repository.BusStopCodeRepository
@@ -15,17 +17,16 @@ import java.util.concurrent.Executors
 
 
 class NearestBusStopsViewModel(application: Application) : AndroidViewModel(application) {
-    lateinit var nearestBusStopsGeoListObservable: MutableLiveData<BusStopMeta>
-    lateinit var busStopCodeListObservable: MutableLiveData<BusStopCode>
-    lateinit var busScheduleListObservable: LiveData<BusScheduleMeta>
+    private val applicationContext = getApplication<Application>().applicationContext
+    lateinit var nearestBusStopsGeoListObservable: MutableLiveData<StatusEnum>
     lateinit var busScheduleListRefreshObservable: MutableLiveData<BusScheduleRefreshStatus>
     private val TAG = "NearestBusStopsView"
     private val executorService: ExecutorService = Executors.newFixedThreadPool(4)
     private val executorService2: ExecutorService = Executors.newFixedThreadPool(6)
 
-
     private var expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
-
+    private lateinit var expandableListAdapter: ExpandableListAdapter
+    private lateinit var expandableListTitle: List<String>
 
     private var busStopCodeTempCache: BusStopsCodeResponse? = null
 
@@ -74,6 +75,29 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+    private fun setupExpandableListTitle() {
+        expandableListTitle = ArrayList<String>(expandableListDetail.keys)
+    }
+
+    fun setUpExpandableListAdapter(): ExpandableListAdapter {
+        setupExpandableListTitle()
+        expandableListAdapter =
+            CustomExpandableListAdapter(
+                applicationContext,
+                expandableListTitle,
+                expandableListDetail
+            )
+        return expandableListAdapter
+    }
+
+    fun getExpandableListTitle(): List<String> {
+        return expandableListTitle
+    }
+
+    fun updateExpandableListAdapter() {
+        (expandableListAdapter as CustomExpandableListAdapter).notifyDataSetChanged()
+    }
+
     fun getGeoLocationBasedOnBusStopName(busStopName: String): GeoLocation {
         return GeoLocation(
             expandableListDetail[busStopName]!![0].Geolocation.latitude,
@@ -81,11 +105,30 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         )
     }
 
-    fun getNearestBusStopsGeoListObservable(location: String): LiveData<BusStopMeta>? {
+    fun getNearestBusStopsGeoListObservable(location: String): LiveData<StatusEnum>? {
         nearestBusStopsGeoListObservable = MutableLiveData()
         executorService2.submit {
             nearestBusRepository!!.getNearestBusStops(location) {
-                nearestBusStopsGeoListObservable.postValue(it)
+                if (!it.BusStopMetaList.isNullOrEmpty()) {
+                    val nearestBusStopsList = it.BusStopMetaList
+                    for (i in it.BusStopMetaList.indices) {
+                        val busStopArrayList: MutableList<StoredBusMeta> = ArrayList()
+                        val geoLocation = GeoLocation(
+                            nearestBusStopsList[i]!!.latitude,
+                            nearestBusStopsList[i]!!.longitude
+                        )
+                        val finalBusMeta = StoredBusMeta("0", geoLocation, null)
+                        busStopArrayList.add(finalBusMeta)
+                        setExpandableListDetail(
+                            nearestBusStopsList[i]!!.busStopName,
+                            busStopArrayList
+                        )
+                    }
+                    nearestBusStopsGeoListObservable.postValue(StatusEnum.Success)
+                }
+                else{
+                    nearestBusStopsGeoListObservable.postValue(StatusEnum.UnknownError)
+                }
             }
         }
         return nearestBusStopsGeoListObservable
@@ -95,8 +138,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         busStopName: String,
         latitude: Double,
         longtitude: Double
-    ): LiveData<BusStopCode>? {
-        busStopCodeListObservable = MutableLiveData()
+    ) {
         executorService2.submit {
             busStopCodeRepository!!.getBusStopCodeFromCache(
                 busStopCodeTempCache,
@@ -104,10 +146,13 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                 latitude,
                 longtitude
             ) {
-                busStopCodeListObservable.postValue(it)
+                setBusStopCodeInExpendableListDetail(
+                    busStopName,
+                    it.busStopCode
+                )
+                getBusScheduleListObservable(it.busStopCode.toLong(),busStopName)
             }
         }
-        return busStopCodeListObservable
     }
 
     //if API call is success, update temp cache
@@ -119,19 +164,23 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    fun getBusScheduleListObservable(busStopCode: Long): LiveData<BusScheduleMeta>? {
-        busScheduleListObservable = MutableLiveData()
+    fun getBusScheduleListObservable(
+        busStopCode: Long,
+        busStopName: String
+    ) {
         executorService2.submit {
             busScheduleRepository!!.getBusScheduleMetaList(busStopCode) {
-                (busScheduleListObservable as MutableLiveData<BusScheduleMeta>).postValue(it)
+                if (it.Services.isNotEmpty()) {
+                    setServicesInExpendableListDetail(busStopName, it.Services)
+                    updateExpandableListAdapter()
+                }
             }
         }
-        return busScheduleListObservable
     }
 
-    fun refreshExpandedBusStops(busStopList: HashMap<String, String>): LiveData<BusScheduleRefreshStatus>? {
+    fun refreshExpandedBusStops(busStopList: HashMap<String, String> , viewCallBack: (BusScheduleRefreshStatus) -> Unit){
         //busScheduleListRefreshObservable = busScheduleRepository!!.getBusScheduleMetaRefreshList(busStopList)
-        busScheduleListRefreshObservable = MutableLiveData()
+        //busScheduleListRefreshObservable = MutableLiveData()
         executorService.submit {
             Log.d(TAG, "Current thread executing is ${Thread.currentThread().name}")
             //TODO add callback method here
@@ -148,14 +197,15 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                         }
                     }
                     Log.d(TAG, "PostValue observer here")
-                    busScheduleListRefreshObservable.postValue(BusScheduleRefreshStatus(true))
+                    updateExpandableListAdapter()
+                    viewCallBack(BusScheduleRefreshStatus(true))
                 } else {
-                    busScheduleListRefreshObservable.postValue(BusScheduleRefreshStatus(false))
+                    viewCallBack(BusScheduleRefreshStatus(false))
                 }
             }
         }
         Log.d(TAG, "Return observer here")
-        return busScheduleListRefreshObservable
+        //return busScheduleListRefreshObservable
     }
 
 
