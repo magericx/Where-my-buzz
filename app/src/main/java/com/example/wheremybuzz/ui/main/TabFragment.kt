@@ -218,12 +218,14 @@ class TabFragment : Fragment() {
                 if (busScheduleRefreshStatus.refreshstatus) {
                     if (!swipeRefresh) {
                         allowRefresh = true
+                    }else{
+                        swipeContainer.isRefreshing = false
                     }
                 } else {
                     //check if nothing retrieved due to network, show error placeholder page
 
                 }
-                //swipeContainer.isRefreshing = false
+
             }
         }
         else{

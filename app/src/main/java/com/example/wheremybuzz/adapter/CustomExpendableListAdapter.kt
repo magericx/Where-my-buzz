@@ -4,6 +4,7 @@ package com.example.wheremybuzz.adapter
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Typeface
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +15,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.utils.TimeUtil
+import com.facebook.shimmer.ShimmerFrameLayout
 import java.util.*
 
 
@@ -37,46 +39,74 @@ class CustomExpandableListAdapter(
         isLastChild: Boolean, convertView: View?, parent: ViewGroup
     ): View? {
 
-        var convertView = convertView
+        var convertView: View? = convertView
+        var shimmeringLayoutView: ShimmerFrameLayout? = null
+        //var convertViewShimmer: View? = null
         val expandedListText =
             getChild(listPosition, expandedListPosition)
         if (convertView == null) {
             val layoutInflater = context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            convertView = layoutInflater.inflate(R.layout.list_item, null)
+            convertView = if (expandedListText?.Services?.ServiceNo != null){
+                layoutInflater.inflate(R.layout.list_item, null)
+            } else{
+                layoutInflater.inflate(R.layout.list_item_placeholder, null)
+            }
+        } else{
+            //use getTag and setTag to solve reassignment issue
+            //need to change logic to if convertView != null & instanceOf Shimmering
+            val layoutInflater = context
+                .getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+            if (expandedListText?.Services?.ServiceNo == null){
+                convertView = layoutInflater.inflate(R.layout.list_item_placeholder, null)
+            }else{
+                convertView = layoutInflater.inflate(R.layout.list_item, null)
+            }
         }
-        val busNumber = convertView
-            ?.findViewById<View>(R.id.busNumber) as TextView
-        val firstArriveTime = convertView
-            .findViewById<View>(R.id.firstArriveTime) as TextView
-        val firstBusIcon = convertView
-            .findViewById<View>(R.id.firstBusIcon) as ImageView
-        val secondArriveTime = convertView
-            .findViewById<View>(R.id.secondArriveTime) as TextView
-        val secondBusIcon = convertView
-            .findViewById<View>(R.id.secondBusIcon) as ImageView
-        val thirdArriveTime = convertView
-            .findViewById<View>(R.id.thirdArriveTime) as TextView
-        val thirdBusIcon = convertView
-            .findViewById<View>(R.id.thirdBusIcon) as ImageView
-        //busNumber.text = expandedListText.toString()
-        //Log.d(TAG, "Retrieved expanddedListText is : $expandedListText")
-        if (expandedListText?.Services != null) {
-            busNumber.text = expandedListText.Services!!.ServiceNo
-            setArriveTime(expandedListText.Services!!.NextBus.EstimatedArrival, firstArriveTime)
-            setBusType(expandedListText.Services!!.NextBus.Type, firstBusIcon)
-            setArriveTime(expandedListText.Services!!.NextBus2.EstimatedArrival, secondArriveTime)
-            setBusType(expandedListText.Services!!.NextBus2.Type, secondBusIcon)
-            setArriveTime(expandedListText.Services!!.NextBus3.EstimatedArrival, thirdArriveTime)
-            setBusType(expandedListText.Services!!.NextBus3.Type, thirdBusIcon)
+        //convertViewShimmer?.visibility = View.VISIBLE
+        //prevent showing of N.A to user at beginning when loading data
+//        convertView?.visibility =
+//            if (expandedListText?.Services?.ServiceNo == null) View.INVISIBLE else View.VISIBLE
+
+        if (expandedListText?.Services?.ServiceNo != null){
+            val busNumber = convertView
+                ?.findViewById<View>(R.id.busNumber) as TextView
+            val firstArriveTime = convertView
+                .findViewById<View>(R.id.firstArriveTime) as TextView
+            val firstBusIcon = convertView
+                .findViewById<View>(R.id.firstBusIcon) as ImageView
+            val secondArriveTime = convertView
+                .findViewById<View>(R.id.secondArriveTime) as TextView
+            val secondBusIcon = convertView
+                .findViewById<View>(R.id.secondBusIcon) as ImageView
+            val thirdArriveTime = convertView
+                .findViewById<View>(R.id.thirdArriveTime) as TextView
+            val thirdBusIcon = convertView
+                .findViewById<View>(R.id.thirdBusIcon) as ImageView
+            //busNumber.text = expandedListText.toString()
+            //Log.d(TAG, "Retrieved expanddedListText is : $expandedListText")
+            if (expandedListText?.Services != null) {
+                busNumber.text = expandedListText.Services!!.ServiceNo
+                setArriveTime(expandedListText.Services!!.NextBus.EstimatedArrival, firstArriveTime)
+                setBusType(expandedListText.Services!!.NextBus.Type, firstBusIcon)
+                setArriveTime(
+                    expandedListText.Services!!.NextBus2.EstimatedArrival,
+                    secondArriveTime
+                )
+                setBusType(expandedListText.Services!!.NextBus2.Type, secondBusIcon)
+                setArriveTime(
+                    expandedListText.Services!!.NextBus3.EstimatedArrival,
+                    thirdArriveTime
+                )
+                setBusType(expandedListText.Services!!.NextBus3.Type, thirdBusIcon)
 //            Log.d(
 //                TAG,
 //                "Returned date is ${TimeUtil.retrieveDifferenceFromNow(expandedListText.Services!!.NextBus.EstimatedArrival)}"
 //            )
-        } else {
-            busNumber.text = context.getString(R.string.not_available)
+            } else {
+                busNumber.text = context.getString(R.string.not_available)
+            }
         }
-
 
         //change to include fields to show
         return convertView
