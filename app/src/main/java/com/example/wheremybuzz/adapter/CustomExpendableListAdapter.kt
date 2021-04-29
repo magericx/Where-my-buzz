@@ -23,7 +23,12 @@ class CustomExpandableListAdapter(
     private val context: Context, private val expandableListTitle: List<String>,
     private val expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
 ) : BaseExpandableListAdapter() {
-    val TAG = "CustomExpendableListAdapter"
+    companion object {
+        val TAG = "CustomExpendableListAdapter"
+        val shimmer = "shouldShimmer"
+        val shimmer2 = "noShimmer"
+    }
+
     override fun getChild(listPosition: Int, expandedListPosition: Int): StoredBusMeta? {
         return expandableListDetail[expandableListTitle[listPosition]]
             ?.get(expandedListPosition)
@@ -31,6 +36,10 @@ class CustomExpandableListAdapter(
 
     override fun getChildId(listPosition: Int, expandedListPosition: Int): Long {
         return expandedListPosition.toLong()
+    }
+
+    fun getLayoutInflator(): LayoutInflater {
+        return context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
     }
 
     @SuppressLint("LongLogTag")
@@ -41,34 +50,44 @@ class CustomExpandableListAdapter(
 
         var convertView: View? = convertView
         var shimmeringLayoutView: ShimmerFrameLayout? = null
-        //var convertViewShimmer: View? = null
+        val shouldShowShimmer: Boolean
         val expandedListText =
             getChild(listPosition, expandedListPosition)
+
+        //check if there are values to be shown
+        shouldShowShimmer = expandedListText?.Services?.ServiceNo == null
+        Log.d(TAG, "Current convertView is $convertView")
+
         if (convertView == null) {
-            val layoutInflater = context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            convertView = if (expandedListText?.Services?.ServiceNo != null){
-                layoutInflater.inflate(R.layout.list_item, null)
-            } else{
-                layoutInflater.inflate(R.layout.list_item_placeholder, null)
-            }
-        } else{
+            convertView = if (shouldShowShimmer) getLayoutInflator().inflate(
+                R.layout.list_item_placeholder,
+                null
+            ) else getLayoutInflator().inflate(R.layout.list_item, null)
+            shimmeringLayoutView = convertView.findViewById(R.id.shimmer_list_view_container)
+            shimmeringLayoutView?.startShimmerAnimation()
+        } else {
             //use getTag and setTag to solve reassignment issue
             //need to change logic to if convertView != null & instanceOf Shimmering
-            val layoutInflater = context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            if (expandedListText?.Services?.ServiceNo == null){
-                convertView = layoutInflater.inflate(R.layout.list_item_placeholder, null)
-            }else{
-                convertView = layoutInflater.inflate(R.layout.list_item, null)
+            if (convertView.tag == shimmer) {
+                if (!shouldShowShimmer) {
+                    convertView = getLayoutInflator().inflate(R.layout.list_item, null)
+                }
+            } else if (convertView.tag == shimmer2) {
+                if (shouldShowShimmer) {
+                    convertView = getLayoutInflator().inflate(R.layout.list_item_placeholder, null)
+                }
             }
         }
+        //tag will be used for next iteration
+        if (shouldShowShimmer) convertView?.tag = shimmer else convertView?.tag = shimmer2
+
+
         //convertViewShimmer?.visibility = View.VISIBLE
         //prevent showing of N.A to user at beginning when loading data
 //        convertView?.visibility =
 //            if (expandedListText?.Services?.ServiceNo == null) View.INVISIBLE else View.VISIBLE
 
-        if (expandedListText?.Services?.ServiceNo != null){
+        if (expandedListText?.Services?.ServiceNo != null) {
             val busNumber = convertView
                 ?.findViewById<View>(R.id.busNumber) as TextView
             val firstArriveTime = convertView

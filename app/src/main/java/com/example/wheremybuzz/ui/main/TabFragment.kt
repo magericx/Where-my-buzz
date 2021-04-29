@@ -75,12 +75,12 @@ class TabFragment : Fragment() {
     }
 
     override fun onResume() {
+        super.onResume()
         if (position == 0 && allowRefresh) {
             allowRefresh = false
             Log.d(TAG, "On resume app here")
             refreshExpandedList(false)
         }
-        super.onResume()
     }
 
     override fun onCreateView(
@@ -276,8 +276,8 @@ class TabFragment : Fragment() {
     }
 
     override fun onPause() {
-        viewModel?.destroyDisposable()
         super.onPause()
+        viewModel?.destroyDisposable()
     }
 
     override fun onDestroy() {
