@@ -11,7 +11,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 object CacheManager {
     private var context: Context = MyApplication.instance.applicationContext
     private const val TAG = "CacheWriter"
-    private var cacheHelper: CacheHelper? = null
+    private lateinit var cacheHelper: CacheHelper
+    //private var cacheHelper: CacheHelper? = null
     private const val fileName: String = "busStopCode.cache"
 
     val initializeCacheHelper: CacheHelper? by lazy {

@@ -39,7 +39,7 @@ object TimeUtil {
         return calculateDifference(convertedMillis)
     }
 
-    //TODO add method to calculate difference from now
+    //Imlementation to calculate time difference
     private fun calculateDifference(comparisonTime: Long): String {
         val currentTime = getCurrentTimeStamp()
         if (currentTime > comparisonTime) {

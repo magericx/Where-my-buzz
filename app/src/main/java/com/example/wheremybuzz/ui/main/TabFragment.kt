@@ -276,12 +276,13 @@ class TabFragment : Fragment() {
     }
 
     override fun onPause() {
-        super.onPause()
         viewModel?.destroyDisposable()
+        super.onPause()
     }
 
     override fun onDestroy() {
         expandableListView = null
+        viewModel?.destroyDisposable()
         viewModel?.destroyRepositories()
         viewModel = null
         super.onDestroy()

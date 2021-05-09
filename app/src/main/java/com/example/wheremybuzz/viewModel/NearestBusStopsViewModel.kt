@@ -59,7 +59,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    //TODO Add implementation for services
+    //Implementation for services
     private fun setServicesInExpendableListDetail(key: String, serviceList: List<Service>) {
         //Log.d(TAG, "expandableListDetails is $expandableListDetail")
         if (expandableListDetail.containsKey(key)) {
@@ -186,7 +186,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         //busScheduleListRefreshObservable = MutableLiveData()
         executorService.submit {
             Log.d(TAG, "Current thread executing is ${Thread.currentThread().name}")
-            //TODO add callback method here
+            //callback method
             busScheduleRepository?.getBusScheduleMetaRefreshList(busStopList) { it ->
                 if (it.servicesList.isNotEmpty()) {
                     Log.d(TAG, "ServiceList size is ${it.servicesList.size}")

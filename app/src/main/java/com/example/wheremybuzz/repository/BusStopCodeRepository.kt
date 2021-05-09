@@ -10,6 +10,7 @@ import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.model.Value
 import com.example.wheremybuzz.utils.CacheManager
+import com.example.wheremybuzz.utils.RXDisposableManager
 import com.example.wheremybuzz.utils.helper.CacheHelper
 import com.example.wheremybuzz.utils.helper.LtaRetrofitHelper
 import io.reactivex.Observable
@@ -187,7 +188,7 @@ class BusStopCodeRepository {
                 )
             )
         }
-        Observable
+        val disposable = Observable
             .zip(requests) {
                 for (i in it.indices) {
                     val busStopCodeResponse = (it[i] as BusStopsCodeResponse).value
@@ -203,5 +204,6 @@ class BusStopCodeRepository {
             }) {
                 Log.d(TAG, "Error occured due to $it")
             }
+        RXDisposableManager.add(disposable)
     }
 }

@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.model.BusScheduleMeta
 import com.example.wheremybuzz.model.BusScheduleMetaRefresh
+import com.example.wheremybuzz.utils.RXDisposableManager
 import com.example.wheremybuzz.utils.helper.LtaRetrofitHelper
 import retrofit2.Call
 import retrofit2.Response
@@ -26,7 +27,7 @@ class BusScheduleRepository {
     private val ai: ApplicationInfo = context.packageManager
         .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
     private val ltaApiKey: String = ai.metaData["com.lta.android.geo.LTA_KEY"] as String
-    private var disposables = CompositeDisposable()
+    //private val disposableManager: RXDisposableManager = RXDisposableManager
 
     //fetch for single bus stop
     fun getBusScheduleMetaList(busStopCode: Long, viewModelCallBack: (BusScheduleMeta) -> Unit) {
@@ -73,7 +74,7 @@ class BusScheduleRepository {
                 )
             }
             //do zipping of the results as a whole here
-            Observable
+            val disposable = Observable
                 .zip(requests) {
                     // do something with those results and emit new event
                     Log.d(TAG, "Retrieved list size is ${it.size}")
@@ -105,13 +106,12 @@ class BusScheduleRepository {
                     Log.d(TAG, "Error due to $it")
                     viewModelCallBack(BusScheduleMetaRefresh(retrievedBusScheduleList))
                 }
+            RXDisposableManager.add(disposable)
         }
         //disposables.add(disposable)
     }
 
     fun destroyDisposable() {
-        if (!disposables.isDisposed) {
-            disposables.dispose()
-        }
+        RXDisposableManager.dispose()
     }
 }
