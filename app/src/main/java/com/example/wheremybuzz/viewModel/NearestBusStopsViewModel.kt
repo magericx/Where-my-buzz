@@ -8,6 +8,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.*
+import com.example.wheremybuzz.model.callback.BusScheduleMetaCallBack
+import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.repository.BusScheduleRepository
 import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
@@ -17,10 +19,13 @@ import java.util.concurrent.Executors
 
 
 class NearestBusStopsViewModel(application: Application) : AndroidViewModel(application) {
+
+    companion object{
+        private val TAG = "NearestBusStopsView"
+    }
+
     private val applicationContext = getApplication<Application>().applicationContext
     lateinit var nearestBusStopsGeoListObservable: MutableLiveData<StatusEnum>
-    lateinit var busScheduleListRefreshObservable: MutableLiveData<BusScheduleRefreshStatus>
-    private val TAG = "NearestBusStopsView"
     private val executorService: ExecutorService = Executors.newFixedThreadPool(4)
     private val executorService2: ExecutorService = Executors.newFixedThreadPool(6)
 
@@ -45,11 +50,12 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return expandableListDetail
     }
 
-    fun setExpandableListDetail(key: String, list: MutableList<StoredBusMeta>) {
+    private fun setExpandableListDetail(key: String, list: MutableList<StoredBusMeta>) {
         expandableListDetail[key] = list
     }
 
-    fun setBusStopCodeInExpendableListDetail(key: String, busStopCode: String) {
+    private fun setBusStopCodeInExpendableListDetail(key: String, busStopCode: String) {
+        Log.d(TAG,"setBusStopCodeInExpendableListDetail here")
         if (expandableListDetail.containsKey(key)) {
             val oldValue = expandableListDetail[key]
             oldValue?.get(0)?.BusStopCode = busStopCode
@@ -139,6 +145,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         longtitude: Double
     ) {
         executorService2.submit {
+            Log.d(TAG,"Retrieve cache here")
             busStopCodeRepository!!.getBusStopCodeFromCache(
                 busStopCodeTempCache,
                 busStopName,
@@ -169,21 +176,23 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         busStopName: String
     ) {
         executorService2.submit {
-            busScheduleRepository!!.getBusScheduleMetaList(busStopCode) {
-                if (it.Services.isNotEmpty()) {
-                    setServicesInExpendableListDetail(busStopName, it.Services)
-                    updateExpandableListAdapter()
+            busScheduleRepository!!.getBusScheduleMetaList(busStopCode, object:
+                BusScheduleMetaCallBack {
+                override fun updateOnResult(busScheduleMeta: BusScheduleMeta) {
+                    Log.d(TAG,"calling busScheduleMeta here")
+                    if (busScheduleMeta.Services.isNotEmpty()) {
+                        setServicesInExpendableListDetail(busStopName, busScheduleMeta.Services)
+                        updateExpandableListAdapter()
+                    }
                 }
-            }
+            })
         }
     }
 
     fun refreshExpandedBusStops(
         busStopList: HashMap<String, String>,
-        viewCallBack: (BusScheduleRefreshStatus) -> Unit
+        callback: StatusCallBack
     ) {
-        //busScheduleListRefreshObservable = busScheduleRepository!!.getBusScheduleMetaRefreshList(busStopList)
-        //busScheduleListRefreshObservable = MutableLiveData()
         executorService.submit {
             Log.d(TAG, "Current thread executing is ${Thread.currentThread().name}")
             //callback method
@@ -201,10 +210,10 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                     }
                     Log.d(TAG, "PostValue observer here")
                     updateExpandableListAdapter()
-                    viewCallBack(BusScheduleRefreshStatus(true))
+                    callback.updateOnResult(true)
                 } else {
                     Log.d(TAG,"Trigger callback here")
-                    viewCallBack(BusScheduleRefreshStatus(false))
+                    callback.updateOnResult(false)
                 }
             }
         }

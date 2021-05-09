@@ -9,4 +9,5 @@
     <string name="bendy_deck">BD</string>
     <string name="not_applicable">N.A</string>
     <string name="arrive">Arr</string>
+    <string name="ouch_something_went_wrong">Something went wrong</string>
 </resources>

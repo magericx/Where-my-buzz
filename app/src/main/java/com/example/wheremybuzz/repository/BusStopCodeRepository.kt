@@ -21,11 +21,14 @@ import retrofit2.Response
 import java.util.*
 
 class BusStopCodeRepository {
-    private val TAG: String = "BusStopCodeRepository"
-    private val context: Context = MyApplication.instance.applicationContext
-    private val ai: ApplicationInfo = context.packageManager
-        .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
-    private val ltaApiKey: String = ai.metaData["com.lta.android.geo.LTA_KEY"] as String
+    companion object {
+        private val TAG: String = "BusStopCodeRepository"
+        private val context: Context = MyApplication.instance.applicationContext
+        private val ai: ApplicationInfo = context.packageManager
+            .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+        private val ltaApiKey: String = ai.metaData["com.lta.android.geo.LTA_KEY"] as String
+    }
+
     var cacheHelper: CacheHelper = CacheManager.initializeCacheHelper!!
 
     //retrieve busStopCode from cache

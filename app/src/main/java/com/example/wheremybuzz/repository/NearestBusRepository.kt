@@ -17,17 +17,20 @@ import retrofit2.Response
 
 
 class NearestBusRepository {
-    private val TAG: String = "NearestBusRepository"
+    companion object{
+        private val TAG: String = "NearestBusRepository"
+        private val radius: Int = 300
+        private val type: String = "transit_station"
+        private val context: Context = MyApplication.instance.applicationContext
+        private val ai: ApplicationInfo = context.packageManager
+            .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+        private val googleApiKey: String = ai.metaData["com.google.android.geo.API_KEY"] as String
+    }
 
     //For 1 bus stop
     //private val radius: Int = 100
     //For multiple bus stops
-    private val radius: Int = 300
-    private val type: String = "transit_station"
-    private val context: Context = MyApplication.instance.applicationContext
-    private val ai: ApplicationInfo = context.packageManager
-        .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
-    private val googleApiKey: String = ai.metaData["com.google.android.geo.API_KEY"] as String
+
 
     fun getNearestBusStops(
         location: String,

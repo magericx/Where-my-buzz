@@ -17,6 +17,7 @@ import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
+import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.utils.CacheManager
 import com.example.wheremybuzz.utils.SharedPreferenceManager
 import com.example.wheremybuzz.utils.TimeUtil
@@ -43,8 +44,10 @@ class TabFragment : Fragment() {
     lateinit var cacheHelper: CacheHelper
     private val forceUpdateCache = false
     private var allowRefresh = false
-    private val executorService: ExecutorService = Executors.newFixedThreadPool(4)
+    private var originalView: View? = null
+    private var errorView : View? = null
 
+    //TODO add error placeholder view
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,8 +91,10 @@ class TabFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val view: View = inflater.inflate(R.layout.fragment_tab, container, false)
+        //originalView = inflater.inflate(R.layout.fragment_tab, container, false)
         shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
-        swipeContainer = view.findViewById(R.id.swipeContainer)
+        swipeContainer = view.findViewById(R.id.swipeContainer)!!
+        //errorView = inflater.inflate(R.layout.error_placeholder_layout, container, false)
         if (position == 0) {
             enableShimmer()
         } else {
@@ -185,6 +190,8 @@ class TabFragment : Fragment() {
                                 Toast.LENGTH_SHORT
                             ).show()
                             if (status == StatusEnum.Success) {
+//                                originalView?.visibility= View.INVISIBLE
+//                                errorView?.visibility = View.VISIBLE
                                 createExpandableListAdapter()
                                 disableShimmer()
                             } else {
@@ -194,6 +201,9 @@ class TabFragment : Fragment() {
                         }
                     })
         }
+    }
+
+    private fun alterViews(){
     }
 
     private fun enableShimmer() {
@@ -214,21 +224,20 @@ class TabFragment : Fragment() {
         val list: HashMap<String, String>? = getCurrentExpandedList()
         if (!list.isNullOrEmpty()) {
             Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
-            viewModel?.refreshExpandedBusStops(list) { busScheduleRefreshStatus ->
-                if (busScheduleRefreshStatus.refreshstatus) {
-                    if (!swipeRefresh) {
-                        allowRefresh = true
-                    }else{
-                        swipeContainer.isRefreshing = false
+            viewModel?.refreshExpandedBusStops(list, object : StatusCallBack {
+                override fun updateOnResult(status: Boolean) {
+                    if (status) {
+                        if (!swipeRefresh) {
+                            allowRefresh = true
+                        } else {
+                            swipeContainer.isRefreshing = false
+                        }
+                    } else {
+                        //check if nothing retrieved due to network, show error placeholder page
                     }
-                } else {
-                    //check if nothing retrieved due to network, show error placeholder page
-
                 }
-
-            }
-        }
-        else{
+            })
+        } else {
             if (swipeRefresh) {
                 swipeContainer.isRefreshing = false
             }
