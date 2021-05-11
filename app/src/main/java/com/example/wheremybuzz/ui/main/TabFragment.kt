@@ -40,11 +40,11 @@ class TabFragment : Fragment() {
             return tabFragment
         }
 
-        private val location: String = "1.380308, 103.741256"
-        private val firstIndex: Int = 0
-        private val TAG: String = "TabFragment"
+        private const val location: String = "1.380308, 103.741256"
+        private const val firstIndex: Int = 0
+        private const val TAG: String = "TabFragment"
         private val timeUtil: TimeUtil = TimeUtil
-        private val forceUpdateCache = false
+        private const val forceUpdateCache = false
     }
 
     var position = 0
