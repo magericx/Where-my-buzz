@@ -19,39 +19,52 @@ import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.utils.CacheManager
+import com.example.wheremybuzz.utils.NetworkUtil
 import com.example.wheremybuzz.utils.SharedPreferenceManager
 import com.example.wheremybuzz.utils.TimeUtil
 import com.example.wheremybuzz.utils.helper.CacheHelper
 import com.example.wheremybuzz.utils.helper.SharedPreferenceHelper
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import com.google.android.material.button.MaterialButton
 
 
 class TabFragment : Fragment() {
-    var position = 0
-    private val TAG: String = "TabFragment"
 
+    companion object {
+        fun getInstance(position: Int): Fragment {
+            val bundle = Bundle()
+            bundle.putInt("pos", position)
+            val tabFragment = TabFragment()
+            tabFragment.arguments = bundle
+            return tabFragment
+        }
+
+        private val location: String = "1.380308, 103.741256"
+        private val firstIndex: Int = 0
+        private val TAG: String = "TabFragment"
+        private val timeUtil: TimeUtil = TimeUtil
+        private val forceUpdateCache = false
+    }
+
+    var position = 0
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     var expandableListView: ExpandableListView? = null
     lateinit var swipeContainer: SwipeRefreshLayout
     lateinit var expandableListAdapter: ExpandableListAdapter
     lateinit var expandableListTitle: List<String>
     var viewModel: NearestBusStopsViewModel? = null
-    private val timeUtil: TimeUtil = TimeUtil
+
     lateinit var sharedPreference: SharedPreferenceHelper
     lateinit var cacheHelper: CacheHelper
-    private val forceUpdateCache = false
     private var allowRefresh = false
-    private var originalView: View? = null
-    private var errorView : View? = null
-
-    //TODO add error placeholder view
+    private var enabledNetwork = false
+    lateinit var errorButton: MaterialButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         position = arguments!!.getInt("pos")
+        enabledNetwork = NetworkUtil.haveNetworkConnection()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -61,7 +74,7 @@ class TabFragment : Fragment() {
             ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
                 NearestBusStopsViewModel::class.java
             )
-        if (position == 0) {
+        if (position == 0 && enabledNetwork) {
             // check if busStopCode is empty or missing, retrieve and save to cache
             cacheHelper = CacheManager.initializeCacheHelper!!
             if (forceUpdateCache || !cacheHelper.cacheExists() || timeUtil.checkTimeStampExceed3days(
@@ -77,38 +90,62 @@ class TabFragment : Fragment() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (position == 0 && allowRefresh) {
-            allowRefresh = false
-            Log.d(TAG, "On resume app here")
-            refreshExpandedList(false)
-        }
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val view: View = inflater.inflate(R.layout.fragment_tab, container, false)
-        //originalView = inflater.inflate(R.layout.fragment_tab, container, false)
-        shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
-        swipeContainer = view.findViewById(R.id.swipeContainer)!!
-        //errorView = inflater.inflate(R.layout.error_placeholder_layout, container, false)
-        if (position == 0) {
-            enableShimmer()
+        //refetch network status again for second time, since onCreate won't be called anymore
+        enabledNetwork = NetworkUtil.haveNetworkConnection()
+        Log.d(TAG, "Invoke onCreateView here")
+        val view: View?
+        Log.d(TAG, "enabledNetwork in onCreateView is $enabledNetwork")
+        if (enabledNetwork) {
+            view = inflater.inflate(R.layout.fragment_tab, container, false)
+            shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
+            swipeContainer = view.findViewById(R.id.swipeContainer)!!
+            if (position == 0) {
+                enableShimmer()
+            } else {
+                //position == 1, hide the shimmer
+                hideShimmeringLayout()
+                swipeContainer.visibility = View.INVISIBLE
+            }
+            expandableListView = view.findViewById(R.id.expandableListView)
+            Log.d(TAG, "debug expendable $expandableListView")
         } else {
-            //position == 1, hide the shimmer
-            hideShimmeringLayout()
-            swipeContainer.visibility = View.INVISIBLE
+            view = inflater.inflate(R.layout.error_placeholder_layout, container, false)
+            Log.d(TAG, "Inflate errorview here $view")
+            errorButton = view.findViewById(R.id.restartApp)
         }
-        expandableListView = view.findViewById(R.id.expandableListView)
-        Log.d(TAG, "debug expendable $expandableListView")
-        return view
+        Log.d(TAG, "Return view here $view")
+        return view as View
     }
 
     override fun onViewCreated(view: View, @Nullable savedInstanceState: Bundle?) {
+        Log.d(TAG, "Called onViewCreated here $view")
         super.onViewCreated(view, savedInstanceState)
+        if (enabledNetwork) {
+            setListenersForOriginalView()
+        } else {
+            setListenersForErrorView()
+        }
+    }
+
+    private fun setListenersForErrorView() {
+        errorButton.setOnClickListener {
+            //casting is very expensive, do it once here
+            (view as ViewGroup).let {
+                Log.d(TAG, "Number of child views ${it.childCount}")
+                it.removeAllViews()
+                parentFragmentManager.beginTransaction()
+                    .detach(this)
+                    .attach(this)
+                    .commit()
+            }
+        }
+    }
+
+    private fun setListenersForOriginalView() {
         expandableListView!!.setOnGroupExpandListener { groupPosition ->
             Toast.makeText(
                 activity!!.applicationContext,
@@ -203,9 +240,6 @@ class TabFragment : Fragment() {
         }
     }
 
-    private fun alterViews(){
-    }
-
     private fun enableShimmer() {
         shimmeringLayoutView?.startShimmerAnimation()
         shimmeringLayoutView?.visibility = View.VISIBLE
@@ -271,17 +305,13 @@ class TabFragment : Fragment() {
         return visibleExpandedList
     }
 
-    companion object {
-        fun getInstance(position: Int): Fragment {
-            val bundle = Bundle()
-            bundle.putInt("pos", position)
-            val tabFragment = TabFragment()
-            tabFragment.arguments = bundle
-            return tabFragment
+    override fun onResume() {
+        super.onResume()
+        if (position == 0 && allowRefresh) {
+            allowRefresh = false
+            Log.d(TAG, "On resume app here")
+            refreshExpandedList(false)
         }
-
-        private val location: String = "1.380308, 103.741256"
-        private val firstIndex: Int = 0
     }
 
     override fun onPause() {
