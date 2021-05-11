@@ -61,6 +61,8 @@ class TabFragment : Fragment() {
     private var enabledNetwork = false
     lateinit var errorButton: MaterialButton
 
+    //TODO shift error view to another sub view class
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         position = arguments!!.getInt("pos")
@@ -113,9 +115,7 @@ class TabFragment : Fragment() {
             expandableListView = view.findViewById(R.id.expandableListView)
             Log.d(TAG, "debug expendable $expandableListView")
         } else {
-            view = inflater.inflate(R.layout.error_placeholder_layout, container, false)
-            Log.d(TAG, "Inflate errorview here $view")
-            errorButton = view.findViewById(R.id.restartApp)
+            view = inflateErrorPage(inflater, container)
         }
         Log.d(TAG, "Return view here $view")
         return view as View
@@ -142,6 +142,22 @@ class TabFragment : Fragment() {
                     .attach(this)
                     .commit()
             }
+        }
+    }
+
+    private fun inflateErrorPage(inflater: LayoutInflater, container: ViewGroup?): View? {
+        val view = inflater.inflate(R.layout.error_placeholder_layout, container, false)
+        Log.d(TAG, "Inflate errorview here $view")
+        errorButton = view.findViewById(R.id.restartApp)
+        return view
+    }
+
+    private fun showErrorPage() {
+        (view as ViewGroup).let {
+            it.removeAllViews()
+            val li = LayoutInflater.from(context)
+            it.addView(inflateErrorPage(li, it))
+            setListenersForErrorView()
         }
     }
 
@@ -227,14 +243,12 @@ class TabFragment : Fragment() {
                                 Toast.LENGTH_SHORT
                             ).show()
                             if (status == StatusEnum.Success) {
-//                                originalView?.visibility= View.INVISIBLE
-//                                errorView?.visibility = View.VISIBLE
                                 createExpandableListAdapter()
-                                disableShimmer()
                             } else {
                                 //Show error placeholder page
-                                disableShimmer()
+                                showErrorPage()
                             }
+                            disableShimmer()
                         }
                     })
         }
@@ -268,6 +282,7 @@ class TabFragment : Fragment() {
                         }
                     } else {
                         //check if nothing retrieved due to network, show error placeholder page
+                        showErrorPage()
                     }
                 }
             })
