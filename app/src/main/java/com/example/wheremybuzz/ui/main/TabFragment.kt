@@ -24,6 +24,7 @@ import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceMan
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.example.wheremybuzz.utils.helper.cache.CacheHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
+import com.example.wheremybuzz.view.NearestBusView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.material.button.MaterialButton
@@ -106,6 +107,8 @@ class TabFragment : Fragment() {
             view = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
             swipeContainer = view.findViewById(R.id.swipeContainer)!!
+//            view = NearestBusView(activity!!.applicationContext,container!!)
+//            view.enableShimmer()
             if (position == 0) {
                 enableShimmer()
             } else {
