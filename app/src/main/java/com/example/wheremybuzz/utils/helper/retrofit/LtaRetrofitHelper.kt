@@ -1,4 +1,4 @@
-package com.example.wheremybuzz.utils.helper
+package com.example.wheremybuzz.utils.helper.retrofit
 
 import com.example.wheremybuzz.api.BusScheduleApiService
 import com.example.wheremybuzz.api.BusStopsCodeApiService

@@ -9,10 +9,10 @@ import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.model.Value
-import com.example.wheremybuzz.utils.CacheManager
-import com.example.wheremybuzz.utils.RXDisposableManager
-import com.example.wheremybuzz.utils.helper.CacheHelper
-import com.example.wheremybuzz.utils.helper.LtaRetrofitHelper
+import com.example.wheremybuzz.utils.helper.cache.CacheManager
+import com.example.wheremybuzz.utils.helper.network.RXDisposableManager
+import com.example.wheremybuzz.utils.helper.cache.CacheHelper
+import com.example.wheremybuzz.utils.helper.retrofit.LtaRetrofitHelper
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers

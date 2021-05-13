@@ -1,10 +1,8 @@
-package com.example.wheremybuzz.utils
+package com.example.wheremybuzz.utils.helper.cache
 
 import android.content.Context
 import android.util.Log
 import com.example.wheremybuzz.MyApplication
-import com.example.wheremybuzz.model.BusStopsCodeResponse
-import com.example.wheremybuzz.utils.helper.CacheHelper
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 

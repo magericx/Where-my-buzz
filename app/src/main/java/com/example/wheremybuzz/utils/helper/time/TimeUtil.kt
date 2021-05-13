@@ -1,4 +1,4 @@
-package com.example.wheremybuzz.utils
+package com.example.wheremybuzz.utils.helper.time
 
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,13 +35,19 @@ object TimeUtil {
         if (timestamp.isEmpty()) {
             return ""
         }
-        val convertedMillis = convertStringToMillis(timestamp)
-        return calculateDifference(convertedMillis)
+        val convertedMillis =
+            convertStringToMillis(
+                timestamp
+            )
+        return calculateDifference(
+            convertedMillis
+        )
     }
 
     //Imlementation to calculate time difference
     private fun calculateDifference(comparisonTime: Long): String {
-        val currentTime = getCurrentTimeStamp()
+        val currentTime =
+            getCurrentTimeStamp()
         if (currentTime > comparisonTime) {
             return arrive
         }

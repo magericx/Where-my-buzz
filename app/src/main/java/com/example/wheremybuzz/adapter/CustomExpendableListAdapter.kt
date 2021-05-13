@@ -14,7 +14,7 @@ import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.model.StoredBusMeta
-import com.example.wheremybuzz.utils.TimeUtil
+import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.facebook.shimmer.ShimmerFrameLayout
 import java.util.*
 

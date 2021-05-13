@@ -18,12 +18,12 @@ import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.model.callback.StatusCallBack
-import com.example.wheremybuzz.utils.CacheManager
-import com.example.wheremybuzz.utils.NetworkUtil
-import com.example.wheremybuzz.utils.SharedPreferenceManager
-import com.example.wheremybuzz.utils.TimeUtil
-import com.example.wheremybuzz.utils.helper.CacheHelper
-import com.example.wheremybuzz.utils.helper.SharedPreferenceHelper
+import com.example.wheremybuzz.utils.helper.cache.CacheManager
+import com.example.wheremybuzz.utils.helper.network.NetworkUtil
+import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
+import com.example.wheremybuzz.utils.helper.time.TimeUtil
+import com.example.wheremybuzz.utils.helper.cache.CacheHelper
+import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.material.button.MaterialButton
@@ -43,7 +43,8 @@ class TabFragment : Fragment() {
         private const val location: String = "1.380308, 103.741256"
         private const val firstIndex: Int = 0
         private const val TAG: String = "TabFragment"
-        private val timeUtil: TimeUtil = TimeUtil
+        private val timeUtil: TimeUtil =
+            TimeUtil
         private const val forceUpdateCache = false
     }
 

@@ -1,4 +1,4 @@
-package com.example.wheremybuzz.utils.helper
+package com.example.wheremybuzz.utils.helper.sharedpreference
 
 import android.content.SharedPreferences
 

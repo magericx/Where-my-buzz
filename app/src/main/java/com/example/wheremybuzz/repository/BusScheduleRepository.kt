@@ -8,8 +8,8 @@ import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.model.BusScheduleMeta
 import com.example.wheremybuzz.model.callback.BusScheduleMetaCallBack
 import com.example.wheremybuzz.model.BusScheduleMetaRefresh
-import com.example.wheremybuzz.utils.RXDisposableManager
-import com.example.wheremybuzz.utils.helper.LtaRetrofitHelper
+import com.example.wheremybuzz.utils.helper.network.RXDisposableManager
+import com.example.wheremybuzz.utils.helper.retrofit.LtaRetrofitHelper
 import retrofit2.Call
 import retrofit2.Response
 import io.reactivex.Observable

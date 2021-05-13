@@ -1,9 +1,8 @@
-package com.example.wheremybuzz.utils
+package com.example.wheremybuzz.utils.helper.sharedpreference
 
 import android.content.Context
 import android.content.SharedPreferences
 import com.example.wheremybuzz.MyApplication
-import com.example.wheremybuzz.utils.helper.SharedPreferenceHelper
 
 
 object SharedPreferenceManager {
@@ -16,6 +15,9 @@ object SharedPreferenceManager {
         )
     }
     val getSharedPreferenceHelper: SharedPreferenceHelper by lazy {
-        return@lazy SharedPreferenceHelper(preferenceKeyName, sharedPreferences)
+        return@lazy SharedPreferenceHelper(
+            preferenceKeyName,
+            sharedPreferences
+        )
     }
 }
