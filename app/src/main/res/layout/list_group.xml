@@ -15,11 +15,17 @@
 
     <TextView
         android:id="@+id/listTitleAddress"
-        android:layout_width="200dp"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
         android:textColor="@android:color/black"
         android:text = "Sample address"
         android:textStyle = "italic"/>
+
+    <ImageButton android:id="@+id/starButton"
+        android:layout_width="50dp"
+        android:layout_height="match_parent"
+        android:src="@android:drawable/btn_star"
+        android:background="#00ffffff" />
 </LinearLayout>

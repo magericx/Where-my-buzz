@@ -24,7 +24,6 @@ import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceMan
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.example.wheremybuzz.utils.helper.cache.CacheHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
-import com.example.wheremybuzz.view.NearestBusView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.material.button.MaterialButton
@@ -63,6 +62,7 @@ class TabFragment : Fragment() {
     private var enabledNetwork = false
     lateinit var errorButton: MaterialButton
 
+
     //TODO shift error view to another sub view class
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,13 +82,13 @@ class TabFragment : Fragment() {
             // check if busStopCode is empty or missing, retrieve and save to cache
             cacheHelper = CacheManager.initializeCacheHelper!!
             if (forceUpdateCache || !cacheHelper.cacheExists() || timeUtil.checkTimeStampExceed3days(
-                    sharedPreference.getSharedPreference()
+                    sharedPreference.getTimeSharedPreference()
                 )
             ) {
                 Log.d(TAG, "Cache file does not exists or expired")
                 //let background thread handle the heavy workload
                 viewModel?.retrieveBusStopCodesAndSaveCache()
-                sharedPreference.setSharedPreference()
+                sharedPreference.setTimeSharedPreference()
             }
             observeNearestBusStopsModel()
         }
@@ -107,8 +107,6 @@ class TabFragment : Fragment() {
             view = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
             swipeContainer = view.findViewById(R.id.swipeContainer)!!
-//            view = NearestBusView(activity!!.applicationContext,container!!)
-//            view.enableShimmer()
             if (position == 0) {
                 enableShimmer()
             } else {

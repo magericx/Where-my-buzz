@@ -9,6 +9,8 @@ object SharedPreferenceManager {
     private val context: Context = MyApplication.instance.applicationContext
     private const val preferenceFilename = "busStopCodesConfig"
     private const val preferenceKeyName = "lastFetchedCache"
+    private const val favouritePreferenceFilename = "favouriteBusStopsConfig"
+    private const val favouritepreferenceKeyName = "favouriteBusStops"
     private val sharedPreferences: SharedPreferences by lazy {
         return@lazy context.getSharedPreferences(
             preferenceFilename, Context.MODE_PRIVATE
@@ -18,6 +20,18 @@ object SharedPreferenceManager {
         return@lazy SharedPreferenceHelper(
             preferenceKeyName,
             sharedPreferences
+        )
+    }
+
+    private val favouriteSharedPreferences: SharedPreferences by lazy {
+        return@lazy context.getSharedPreferences(
+            favouritePreferenceFilename, Context.MODE_PRIVATE
+        )
+    }
+    val getfavouriteSharedPreferenceHelper: SharedPreferenceHelper by lazy {
+        return@lazy SharedPreferenceHelper(
+            favouritepreferenceKeyName,
+            favouriteSharedPreferences
         )
     }
 }

@@ -4,16 +4,22 @@ package com.example.wheremybuzz.adapter
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Typeface
+import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseExpandableListAdapter
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.model.StoredBusMeta
+import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
+import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.facebook.shimmer.ShimmerFrameLayout
 import java.util.*
@@ -24,9 +30,13 @@ class CustomExpandableListAdapter(
     private val expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
 ) : BaseExpandableListAdapter() {
     companion object {
-        val TAG = "CustomExpendableListAdapter"
-        val shimmer = "shouldShimmer"
-        val shimmer2 = "noShimmer"
+        const val TAG = "CustomExpendableListAdapter"
+        const val shimmer = "shouldShimmer"
+        const val shimmer2 = "noShimmer"
+    }
+    private var isEnabled: Boolean = false
+    private val sharedPreference: SharedPreferenceHelper by lazy{
+        return@lazy SharedPreferenceManager.getfavouriteSharedPreferenceHelper
     }
 
     override fun getChild(listPosition: Int, expandedListPosition: Int): StoredBusMeta? {
@@ -190,6 +200,8 @@ class CustomExpandableListAdapter(
         return listPosition.toLong()
     }
 
+    @SuppressLint("LongLogTag")
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun getGroupView(
         listPosition: Int, isExpanded: Boolean,
         convertView: View?, parent: ViewGroup
@@ -205,7 +217,29 @@ class CustomExpandableListAdapter(
             ?.findViewById<View>(R.id.listTitle) as TextView
         listTitleTextView.setTypeface(null, Typeface.BOLD)
         listTitleTextView.text = listTitle
+        val starButton =  convertView
+            .findViewById<View>(R.id.starButton) as ImageButton
+        starButton.isFocusable = false
+        val busStopCode = getChild(listPosition, 0)?.BusStopCode
+        Log.d(TAG,"Retrieved busStopCode is $busStopCode")
+        if (busStopCode != null){
+            setListenerForStar(starButton,busStopCode)
+            //TODO add busStopCode into sharedpreference if clicked
+            //TODO need to refactor existing codes to fetch busStopCode before updating of adapter
+        }
         return convertView
+    }
+
+    private fun setListenerForStar(starButton : ImageButton, busStopCode: String){
+        starButton.setOnClickListener {
+            if (isEnabled){
+                starButton.setImageDrawable(ContextCompat.getDrawable(context,android.R.drawable.btn_star_big_off));
+            }else{
+                starButton.setImageDrawable(ContextCompat.getDrawable(context,android.R.drawable.btn_star_big_on));
+            }
+            isEnabled = !isEnabled
+        }
+
     }
 
     override fun hasStableIds(): Boolean {
