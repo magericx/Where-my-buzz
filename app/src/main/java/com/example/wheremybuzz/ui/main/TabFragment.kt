@@ -221,7 +221,9 @@ class TabFragment : Fragment() {
         if (position == 0) {
             Log.d(TAG, "Call bus Stop code list API ")
             // Update the list when the data changes
-            viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
+            //viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
+            val busStopCode = viewModel?.getExpandableListBusStopCode(expandableListTitle)
+            viewModel?.getBusScheduleListObservable(busStopCode!!.busStopCode.toLong(),expandableListTitle)
             allowRefresh = true
         }
     }

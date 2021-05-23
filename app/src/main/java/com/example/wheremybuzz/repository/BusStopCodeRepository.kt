@@ -58,30 +58,14 @@ class BusStopCodeRepository {
                             TAG,
                             "Found bus stop code is " + cacheData.value[i].BusStopCode + " for bus stop " + busStopName
                         )
-                        //data.postValue(BusStopCode(cacheData.value[i].BusStopCode))
                         viewModelCallBack(BusStopCode(cacheData.value[i].BusStopCode))
                         found = true
                         break
                     }
                 }
             }
-            if (!found) {
-                Log.d(
-                    TAG,
-                    "Bus stop not found in temporary cache and persistent cache, calling API now to retrieve"
-                )
-                searchForBusStopCode(0, busStopName, latitude, longtitude) {
-
-                }
-            }
-        } else {
-            Log.d(
-                TAG,
-                "Temporary cache & persistent cache not available"
-            )
-            searchForBusStopCode(0, busStopName, latitude, longtitude) {
-
-            }
+            //if busStopCode not found, return ""
+            viewModelCallBack(BusStopCode(""))
         }
     }
 

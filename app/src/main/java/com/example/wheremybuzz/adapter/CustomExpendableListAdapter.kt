@@ -114,7 +114,7 @@ class CustomExpandableListAdapter(
                 .findViewById<View>(R.id.thirdBusIcon) as ImageView
             //busNumber.text = expandedListText.toString()
             //Log.d(TAG, "Retrieved expanddedListText is : $expandedListText")
-            if (expandedListText?.Services != null) {
+            if (expandedListText.Services != null) {
                 busNumber.text = expandedListText.Services!!.ServiceNo
                 setArriveTime(expandedListText.Services!!.NextBus.EstimatedArrival, firstArriveTime)
                 setBusType(expandedListText.Services!!.NextBus.Type, firstBusIcon)
@@ -208,6 +208,7 @@ class CustomExpandableListAdapter(
     ): View {
         var convertView = convertView
         val listTitle = getGroup(listPosition) as String
+        val busStopCode = getChild(listPosition, 0)?.BusStopCode
         if (convertView == null) {
             val layoutInflater =
                 context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -217,15 +218,14 @@ class CustomExpandableListAdapter(
             ?.findViewById<View>(R.id.listTitle) as TextView
         listTitleTextView.setTypeface(null, Typeface.BOLD)
         listTitleTextView.text = listTitle
+        val listAddress = convertView.findViewById<View>(R.id.listTitleAddress) as TextView
+        listAddress.text = busStopCode
         val starButton =  convertView
             .findViewById<View>(R.id.starButton) as ImageButton
         starButton.isFocusable = false
-        val busStopCode = getChild(listPosition, 0)?.BusStopCode
         Log.d(TAG,"Retrieved busStopCode is $busStopCode")
         if (busStopCode != null){
             setListenerForStar(starButton,busStopCode)
-            //TODO add busStopCode into sharedpreference if clicked
-            //TODO need to refactor existing codes to fetch busStopCode before updating of adapter
         }
         return convertView
     }
@@ -233,9 +233,11 @@ class CustomExpandableListAdapter(
     private fun setListenerForStar(starButton : ImageButton, busStopCode: String){
         starButton.setOnClickListener {
             if (isEnabled){
-                starButton.setImageDrawable(ContextCompat.getDrawable(context,android.R.drawable.btn_star_big_off));
+                starButton.setImageDrawable(ContextCompat.getDrawable(context,android.R.drawable.btn_star_big_off))
+                //TODO remove sharedpreference from this click
             }else{
-                starButton.setImageDrawable(ContextCompat.getDrawable(context,android.R.drawable.btn_star_big_on));
+                sharedPreference.appendSharedPreferenceIntoList(busStopCode)
+                starButton.setImageDrawable(ContextCompat.getDrawable(context,android.R.drawable.btn_star_big_on))
             }
             isEnabled = !isEnabled
         }

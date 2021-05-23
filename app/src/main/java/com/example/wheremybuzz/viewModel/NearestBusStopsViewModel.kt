@@ -20,7 +20,7 @@ import java.util.concurrent.Executors
 
 class NearestBusStopsViewModel(application: Application) : AndroidViewModel(application) {
 
-    companion object{
+    companion object {
         private val TAG = "NearestBusStopsView"
     }
 
@@ -50,12 +50,20 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return expandableListDetail
     }
 
+    fun getExpandableListBusStopCode(busStopName: String): BusStopCode {
+        return if (expandableListDetail.containsKey(busStopName)){
+            BusStopCode(expandableListDetail[busStopName]?.get(0)?.BusStopCode!!)
+        }else{
+            BusStopCode("")
+        }
+    }
+
     private fun setExpandableListDetail(key: String, list: MutableList<StoredBusMeta>) {
         expandableListDetail[key] = list
     }
 
     private fun setBusStopCodeInExpendableListDetail(key: String, busStopCode: String) {
-        Log.d(TAG,"setBusStopCodeInExpendableListDetail here")
+        Log.d(TAG, "setBusStopCodeInExpendableListDetail here")
         if (expandableListDetail.containsKey(key)) {
             val oldValue = expandableListDetail[key]
             oldValue?.get(0)?.BusStopCode = busStopCode
@@ -123,12 +131,24 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                             nearestBusStopsList[i]!!.latitude,
                             nearestBusStopsList[i]!!.longitude
                         )
-                        val finalBusMeta = StoredBusMeta("0", geoLocation, null)
-                        busStopArrayList.add(finalBusMeta)
-                        setExpandableListDetail(
+                        //TODO call busStopCode API here
+                        busStopCodeRepository!!.getBusStopCodeFromCache(
+                            busStopCodeTempCache,
                             nearestBusStopsList[i]!!.busStopName,
-                            busStopArrayList
-                        )
+                            nearestBusStopsList[i]!!.latitude,
+                            nearestBusStopsList[i]!!.longitude
+                        ) { busStopCode ->
+                            if (busStopCode.busStopCode.isNotEmpty()) {
+                                Log.d(TAG, "Bus stop code is retrieved here ")
+                                val finalBusMeta =
+                                    StoredBusMeta(busStopCode.busStopCode, geoLocation, null)
+                                busStopArrayList.add(finalBusMeta)
+                                setExpandableListDetail(
+                                    nearestBusStopsList[i]!!.busStopName,
+                                    busStopArrayList
+                                )
+                            }
+                        }
                     }
                     nearestBusStopsGeoListObservable.postValue(StatusEnum.Success)
                 } else {
@@ -145,7 +165,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         longtitude: Double
     ) {
         executorService2.submit {
-            Log.d(TAG,"Retrieve cache here")
+            Log.d(TAG, "Retrieve cache here")
             busStopCodeRepository!!.getBusStopCodeFromCache(
                 busStopCodeTempCache,
                 busStopName,
@@ -171,15 +191,15 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    private fun getBusScheduleListObservable(
+    fun getBusScheduleListObservable(
         busStopCode: Long,
         busStopName: String
     ) {
         executorService2.submit {
-            busScheduleRepository!!.getBusScheduleMetaList(busStopCode, object:
+            busScheduleRepository!!.getBusScheduleMetaList(busStopCode, object :
                 BusScheduleMetaCallBack {
                 override fun updateOnResult(busScheduleMeta: BusScheduleMeta) {
-                    Log.d(TAG,"calling busScheduleMeta here")
+                    Log.d(TAG, "calling busScheduleMeta here")
                     if (busScheduleMeta.Services.isNotEmpty()) {
                         setServicesInExpendableListDetail(busStopName, busScheduleMeta.Services)
                         updateExpandableListAdapter()
@@ -212,7 +232,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                     updateExpandableListAdapter()
                     callback.updateOnResult(true)
                 } else {
-                    Log.d(TAG,"Trigger callback here")
+                    Log.d(TAG, "Trigger callback here")
                     callback.updateOnResult(false)
                 }
             }
