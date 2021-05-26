@@ -65,8 +65,6 @@ class TabFragment : Fragment() {
     private var enabledNetwork = false
     lateinit var errorButton: MaterialButton
 
-    private val poolThread: ExecutorService = MyApplication.poolThread
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         position = arguments!!.getInt("pos")
@@ -80,7 +78,7 @@ class TabFragment : Fragment() {
             ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
                 NearestBusStopsViewModel::class.java
             )
-        if (position == 0 && enabledNetwork) {
+        if (enabledNetwork) {
             // check if busStopCode is empty or missing, retrieve and save to cache
             cacheHelper = CacheManager.initializeCacheHelper!!
             if (forceUpdateCache || !cacheHelper.cacheExists() || timeUtil.checkTimeStampExceed3days(
@@ -109,13 +107,7 @@ class TabFragment : Fragment() {
             view = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
             swipeContainer = view.findViewById(R.id.swipeContainer)!!
-            if (position == 0) {
-                enableShimmer()
-            } else {
-                //position == 1, hide the shimmer
-                hideShimmeringLayout()
-                swipeContainer.visibility = View.INVISIBLE
-            }
+            enableShimmer()
             expandableListView = view.findViewById(R.id.expandableListView)
             Log.d(TAG, "debug expendable $expandableListView")
         } else {
@@ -198,35 +190,32 @@ class TabFragment : Fragment() {
             ).show()
             false
         }
-        if (position == 0) {
-            swipeContainer.setOnRefreshListener { // Your code to refresh the list here.
-                // Make sure you call swipeContainer.setRefreshing(false)
-                // once the network request has completed successfully.
-                refreshExpandedList(true)
-            }
-            swipeContainer.setColorSchemeResources(
-                android.R.color.holo_blue_bright,
-                android.R.color.holo_green_light,
-                android.R.color.holo_orange_light,
-                android.R.color.holo_red_light
-            )
+        swipeContainer.setOnRefreshListener { // Your code to refresh the list here.
+            // Make sure you call swipeContainer.setRefreshing(false)
+            // once the network request has completed successfully.
+            refreshExpandedList(true)
         }
+        swipeContainer.setColorSchemeResources(
+            android.R.color.holo_blue_bright,
+            android.R.color.holo_green_light,
+            android.R.color.holo_orange_light,
+            android.R.color.holo_red_light
+        )
     }
 
     private fun observeBusStopCodeModel(
         expandableListTitle: String
     ) {
-        if (position == 0) {
-            Log.d(TAG, "Call bus Stop code list API ")
-            // Update the list when the data changes
-            //viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
-            val busStopCode = viewModel?.getExpandableListBusStopCode(expandableListTitle)
-            viewModel?.getBusScheduleListObservable(
-                busStopCode!!.busStopCode.toLong(),
-                expandableListTitle
-            )
-            allowRefresh = true
-        }
+        Log.d(TAG, "Call bus Stop code list API ")
+        // Update the list when the data changes
+        //viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
+        val busStopCode = viewModel?.getExpandableListBusStopCode(expandableListTitle)
+        viewModel?.getBusScheduleListObservable(
+            busStopCode!!.busStopCode.toLong(),
+            expandableListTitle
+        )
+        allowRefresh = true
+
     }
 
     //adapter for 1st screen
@@ -237,27 +226,26 @@ class TabFragment : Fragment() {
     }
 
     private fun observeNearestBusStopsModel() {
-        if (position == 0) {
-            Log.d(TAG, "Call nearest bus stop API ")
-            // Update the list when the data changes
-            viewModel?.getNearestBusStopsGeoListObservable(location)
-                ?.observe(viewLifecycleOwner,
-                    Observer<StatusEnum> { status ->
-                        if (status != null) {
-                            Toast.makeText(
-                                activity!!.applicationContext, "Update headers on page",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            if (status == StatusEnum.Success) {
-                                createNearestExpandableListAdapter()
-                            } else {
-                                //Show error placeholder page
-                                showErrorPage()
-                            }
-                            disableShimmer()
+        Log.d(TAG, "Call nearest bus stop API ")
+        // Update the list when the data changes
+        viewModel?.getNearestBusStopsGeoListObservable(location)
+            ?.observe(viewLifecycleOwner,
+                Observer<StatusEnum> { status ->
+                    if (status != null) {
+                        Toast.makeText(
+                            activity!!.applicationContext, "Update headers on page",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        if (status == StatusEnum.Success) {
+                            createNearestExpandableListAdapter()
+                        } else {
+                            //Show error placeholder page
+                            showErrorPage()
                         }
-                    })
-        }
+                        disableShimmer()
+                    }
+                })
+
     }
 
     private fun enableShimmer() {
@@ -275,30 +263,29 @@ class TabFragment : Fragment() {
     }
 
     private fun refreshExpandedList(swipeRefresh: Boolean) {
-        if (position == 0) {
-            val list: HashMap<String, String>? = getCurrentExpandedList()
-            if (!list.isNullOrEmpty()) {
-                Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
-                viewModel?.refreshExpandedBusStops(list, object : StatusCallBack {
-                    override fun updateOnResult(status: Boolean) {
-                        if (status) {
-                            if (!swipeRefresh) {
-                                allowRefresh = true
-                            } else {
-                                swipeContainer.isRefreshing = false
-                            }
+        val list: HashMap<String, String>? = getCurrentExpandedList()
+        if (!list.isNullOrEmpty()) {
+            Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
+            viewModel?.refreshExpandedBusStops(list, object : StatusCallBack {
+                override fun updateOnResult(status: Boolean) {
+                    if (status) {
+                        if (!swipeRefresh) {
+                            allowRefresh = true
                         } else {
-                            //check if nothing retrieved due to network, show error placeholder page
-                            showErrorPage()
+                            swipeContainer.isRefreshing = false
                         }
+                    } else {
+                        //check if nothing retrieved due to network, show error placeholder page
+                        showErrorPage()
                     }
-                })
-            } else {
-                if (swipeRefresh) {
-                    swipeContainer.isRefreshing = false
                 }
+            })
+        } else {
+            if (swipeRefresh) {
+                swipeContainer.isRefreshing = false
             }
         }
+
     }
 
     //method that will check for the expanded items and add into hashmap <busStopCode,busStopName>
@@ -330,7 +317,7 @@ class TabFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (position == 0 && allowRefresh) {
+        if (allowRefresh) {
             allowRefresh = false
             Log.d(TAG, "On resume app here")
             refreshExpandedList(false)
@@ -338,16 +325,13 @@ class TabFragment : Fragment() {
     }
 
     override fun onPause() {
-        Log.d(TAG,"onPause is called")
+        Log.d(TAG, "onPause is called")
         viewModel?.destroyDisposable()
         super.onPause()
     }
 
     override fun onDestroy() {
-        Log.d(TAG,"onDestroy is called")
-        //viewModel?.getExpandableListAdapter()?.cancelExistingTasks()
-        poolThread.shutdown()
-        poolThread.shutdownNow()
+        Log.d(TAG, "onDestroy is called")
         expandableListView = null
         viewModel?.destroyDisposable()
         viewModel?.destroyRepositories()

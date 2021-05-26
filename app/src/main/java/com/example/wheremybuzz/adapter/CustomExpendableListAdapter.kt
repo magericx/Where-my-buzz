@@ -42,7 +42,6 @@ class CustomExpandableListAdapter(
         }
     }
 
-    private lateinit var future: Future<*>
     private val poolThread: ExecutorService = MyApplication.poolThread
     private val mainThread: Handler = MyApplication.mainThreadHandler
 
@@ -98,13 +97,6 @@ class CustomExpandableListAdapter(
         }
         //tag will be used for next iteration
         if (shouldShowShimmer) convertView?.tag = shimmer else convertView?.tag = shimmer2
-
-
-        //convertViewShimmer?.visibility = View.VISIBLE
-        //prevent showing of N.A to user at beginning when loading data
-//        convertView?.visibility =
-//            if (expandedListText?.Services?.ServiceNo == null) View.INVISIBLE else View.VISIBLE
-
         if (expandedListText?.Services?.ServiceNo != null) {
             val busNumber = convertView
                 ?.findViewById<View>(R.id.busNumber) as TextView
@@ -152,36 +144,38 @@ class CustomExpandableListAdapter(
     private fun setArriveTime(arriveTime: String, arriveTimeLabel: TextView) {
         if (arriveTime.isNotBlank()) {
             val calculateFirstArriveTime = TimeUtil.retrieveDifferenceFromNow(arriveTime)
-            if (calculateFirstArriveTime == "0" || calculateFirstArriveTime == "ARR") {
-                arriveTimeLabel.text = context.getString(R.string.arrive)
-            } else if (calculateFirstArriveTime.isEmpty()) {
+            if (calculateFirstArriveTime.isEmpty()) {
                 arriveTimeLabel.text = context.getString(R.string.not_applicable)
             } else {
-                arriveTimeLabel.text = calculateFirstArriveTime
+                when (calculateFirstArriveTime) {
+                    "0" -> arriveTimeLabel.text = context.getString(R.string.arrive)
+                    "ARR" -> arriveTimeLabel.text = context.getString(R.string.arrive)
+                    else -> {
+                        arriveTimeLabel.text = calculateFirstArriveTime
+                    }
+                }
             }
         }
     }
 
     private fun setBusType(busType: String, busIcon: ImageView) {
         if (!busType.isBlank()) {
-            if (busType == context.getString(R.string.single_deck)) {
-                busIcon.setImageDrawable(
+            when (busType) {
+                "SD" -> busIcon.setImageDrawable(
                     ResourcesCompat.getDrawable(
                         context.resources,
                         R.drawable.single_deck,
                         null
                     )
                 )
-            } else if (busType == context.getString(R.string.double_deck)) {
-                busIcon.setImageDrawable(
+                "DD" -> busIcon.setImageDrawable(
                     ResourcesCompat.getDrawable(
                         context.resources,
                         R.drawable.double_deck,
                         null
                     )
                 )
-            } else if (busType == context.getString(R.string.bendy_deck)) {
-                busIcon.setImageDrawable(
+                "BD" -> busIcon.setImageDrawable(
                     ResourcesCompat.getDrawable(
                         context.resources,
                         R.drawable.bendy_bus,
@@ -239,16 +233,18 @@ class CustomExpandableListAdapter(
     }
 
     private fun setListenerForStar(starButton: ImageButton, busStopCode: String) {
-        if (sharedPreference.checkIfExistsInList(busStopCode)) {
-//            mainThread.post {
-                starButton.setImageDrawable(
-                    ContextCompat.getDrawable(
-                        context,
-                        android.R.drawable.btn_star_big_on
+        poolThread.execute {
+            if (sharedPreference.checkIfExistsInList(busStopCode)) {
+                mainThread.post {
+                    starButton.setImageDrawable(
+                        ContextCompat.getDrawable(
+                            context,
+                            android.R.drawable.btn_star_big_on
+                        )
                     )
-                )
-                starButton.setTag(R.string.button_view_tag, true)
-//            }
+                    starButton.setTag(R.string.button_view_tag, true)
+                }
+            }
         }
         starButton.setOnClickListener {
             val previousTag = starButton.getTag(R.string.button_view_tag) ?: false
@@ -286,10 +282,6 @@ class CustomExpandableListAdapter(
         expandedListPosition: Int
     ): Boolean {
         return true
-    }
-
-    fun cancelExistingTasks() {
-        future.cancel(true)
     }
 
 }
