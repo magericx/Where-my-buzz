@@ -29,6 +29,7 @@ import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.material.button.MaterialButton
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.TimeUnit
 
 
 class TabFragment : Fragment() {
@@ -176,9 +177,7 @@ class TabFragment : Fragment() {
             val geoLocation =
                 viewModel?.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
             observeBusStopCodeModel(
-                (expandableListTitle as ArrayList<String>)[groupPosition],
-                geoLocation!!.latitude,
-                geoLocation.longitude
+                (expandableListTitle as ArrayList<String>)[groupPosition]
             )
         }
 
@@ -215,22 +214,24 @@ class TabFragment : Fragment() {
     }
 
     private fun observeBusStopCodeModel(
-        expandableListTitle: String,
-        latitude: Double,
-        longtitude: Double
+        expandableListTitle: String
     ) {
         if (position == 0) {
             Log.d(TAG, "Call bus Stop code list API ")
             // Update the list when the data changes
             //viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
             val busStopCode = viewModel?.getExpandableListBusStopCode(expandableListTitle)
-            viewModel?.getBusScheduleListObservable(busStopCode!!.busStopCode.toLong(),expandableListTitle)
+            viewModel?.getBusScheduleListObservable(
+                busStopCode!!.busStopCode.toLong(),
+                expandableListTitle
+            )
             allowRefresh = true
         }
     }
 
-    private fun createExpandableListAdapter() {
-        expandableListAdapter = viewModel?.setUpExpandableListAdapter()!!
+    //adapter for 1st screen
+    private fun createNearestExpandableListAdapter() {
+        expandableListAdapter = viewModel?.setUpNearestExpandableListAdapter()!!
         expandableListTitle = viewModel?.getExpandableListTitle()!!
         expandableListView!!.setAdapter(expandableListAdapter)
     }
@@ -248,7 +249,7 @@ class TabFragment : Fragment() {
                                 Toast.LENGTH_SHORT
                             ).show()
                             if (status == StatusEnum.Success) {
-                                createExpandableListAdapter()
+                                createNearestExpandableListAdapter()
                             } else {
                                 //Show error placeholder page
                                 showErrorPage()
@@ -274,26 +275,28 @@ class TabFragment : Fragment() {
     }
 
     private fun refreshExpandedList(swipeRefresh: Boolean) {
-        val list: HashMap<String, String>? = getCurrentExpandedList()
-        if (!list.isNullOrEmpty()) {
-            Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
-            viewModel?.refreshExpandedBusStops(list, object : StatusCallBack {
-                override fun updateOnResult(status: Boolean) {
-                    if (status) {
-                        if (!swipeRefresh) {
-                            allowRefresh = true
+        if (position == 0) {
+            val list: HashMap<String, String>? = getCurrentExpandedList()
+            if (!list.isNullOrEmpty()) {
+                Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
+                viewModel?.refreshExpandedBusStops(list, object : StatusCallBack {
+                    override fun updateOnResult(status: Boolean) {
+                        if (status) {
+                            if (!swipeRefresh) {
+                                allowRefresh = true
+                            } else {
+                                swipeContainer.isRefreshing = false
+                            }
                         } else {
-                            swipeContainer.isRefreshing = false
+                            //check if nothing retrieved due to network, show error placeholder page
+                            showErrorPage()
                         }
-                    } else {
-                        //check if nothing retrieved due to network, show error placeholder page
-                        showErrorPage()
                     }
+                })
+            } else {
+                if (swipeRefresh) {
+                    swipeContainer.isRefreshing = false
                 }
-            })
-        } else {
-            if (swipeRefresh) {
-                swipeContainer.isRefreshing = false
             }
         }
     }
@@ -335,12 +338,16 @@ class TabFragment : Fragment() {
     }
 
     override fun onPause() {
+        Log.d(TAG,"onPause is called")
         viewModel?.destroyDisposable()
         super.onPause()
     }
 
     override fun onDestroy() {
+        Log.d(TAG,"onDestroy is called")
+        //viewModel?.getExpandableListAdapter()?.cancelExistingTasks()
         poolThread.shutdown()
+        poolThread.shutdownNow()
         expandableListView = null
         viewModel?.destroyDisposable()
         viewModel?.destroyRepositories()

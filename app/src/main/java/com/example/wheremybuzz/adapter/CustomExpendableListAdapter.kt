@@ -26,6 +26,7 @@ import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.facebook.shimmer.ShimmerFrameLayout
 import java.util.*
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Future
 
 
 class CustomExpandableListAdapter(
@@ -41,6 +42,7 @@ class CustomExpandableListAdapter(
         }
     }
 
+    private lateinit var future: Future<*>
     private val poolThread: ExecutorService = MyApplication.poolThread
     private val mainThread: Handler = MyApplication.mainThreadHandler
 
@@ -237,18 +239,16 @@ class CustomExpandableListAdapter(
     }
 
     private fun setListenerForStar(starButton: ImageButton, busStopCode: String) {
-        poolThread.execute {
-            if (sharedPreference.checkIfExistsInList(busStopCode)) {
-                mainThread.post {
-                    starButton.setImageDrawable(
-                        ContextCompat.getDrawable(
-                            context,
-                            android.R.drawable.btn_star_big_on
-                        )
+        if (sharedPreference.checkIfExistsInList(busStopCode)) {
+//            mainThread.post {
+                starButton.setImageDrawable(
+                    ContextCompat.getDrawable(
+                        context,
+                        android.R.drawable.btn_star_big_on
                     )
-                    starButton.setTag(R.string.button_view_tag, true)
-                }
-            }
+                )
+                starButton.setTag(R.string.button_view_tag, true)
+//            }
         }
         starButton.setOnClickListener {
             val previousTag = starButton.getTag(R.string.button_view_tag) ?: false
@@ -286,6 +286,10 @@ class CustomExpandableListAdapter(
         expandedListPosition: Int
     ): Boolean {
         return true
+    }
+
+    fun cancelExistingTasks() {
+        future.cancel(true)
     }
 
 }

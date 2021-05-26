@@ -3,6 +3,7 @@ package com.example.wheremybuzz
 import android.app.Application
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.core.os.HandlerCompat
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -10,12 +11,14 @@ import java.util.concurrent.Executors
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG,"Created instance of MyApplication here")
         instance = this
         poolThread = Executors.newFixedThreadPool(4)
         mainThreadHandler = HandlerCompat.createAsync(Looper.getMainLooper())
     }
 
     companion object {
+        val TAG = "MyApplication"
         lateinit var instance: MyApplication
             private set
         lateinit var poolThread: ExecutorService

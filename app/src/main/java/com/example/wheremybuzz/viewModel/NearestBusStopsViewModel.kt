@@ -89,12 +89,12 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    private fun setupExpandableListTitle() {
+    private fun setupNearestExpandableListTitle() {
         expandableListTitle = ArrayList<String>(expandableListDetail.keys)
     }
 
-    fun setUpExpandableListAdapter(): ExpandableListAdapter {
-        setupExpandableListTitle()
+    fun setUpNearestExpandableListAdapter(): ExpandableListAdapter {
+        setupNearestExpandableListTitle()
         expandableListAdapter =
             CustomExpandableListAdapter(
                 applicationContext,
@@ -110,6 +110,10 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
 
     fun updateExpandableListAdapter() {
         (expandableListAdapter as CustomExpandableListAdapter).notifyDataSetChanged()
+    }
+
+    fun getExpandableListAdapter() : CustomExpandableListAdapter{
+        return expandableListAdapter as CustomExpandableListAdapter
     }
 
     fun getGeoLocationBasedOnBusStopName(busStopName: String): GeoLocation {
