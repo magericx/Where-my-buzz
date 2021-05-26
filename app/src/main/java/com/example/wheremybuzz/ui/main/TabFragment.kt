@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.StatusEnum
@@ -27,6 +28,7 @@ import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHel
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.material.button.MaterialButton
+import java.util.concurrent.ExecutorService
 
 
 class TabFragment : Fragment() {
@@ -62,8 +64,7 @@ class TabFragment : Fragment() {
     private var enabledNetwork = false
     lateinit var errorButton: MaterialButton
 
-
-    //TODO shift error view to another sub view class
+    private val poolThread: ExecutorService = MyApplication.poolThread
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -339,6 +340,7 @@ class TabFragment : Fragment() {
     }
 
     override fun onDestroy() {
+        poolThread.shutdown()
         expandableListView = null
         viewModel?.destroyDisposable()
         viewModel?.destroyRepositories()

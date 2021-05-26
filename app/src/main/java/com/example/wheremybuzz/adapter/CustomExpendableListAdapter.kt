@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Typeface
 import android.os.Build
+import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -35,12 +36,14 @@ class CustomExpandableListAdapter(
         const val TAG = "CustomExpendableListAdapter"
         const val shimmer = "shouldShimmer"
         const val shimmer2 = "noShimmer"
-        private val sharedPreference: SharedPreferenceHelper by lazy{
+        private val sharedPreference: SharedPreferenceHelper by lazy {
             return@lazy SharedPreferenceManager.getfavouriteSharedPreferenceHelper
         }
     }
 
     private val poolThread: ExecutorService = MyApplication.poolThread
+    private val mainThread: Handler = MyApplication.mainThreadHandler
+
 
     override fun getChild(listPosition: Int, expandedListPosition: Int): StoredBusMeta? {
         return expandableListDetail[expandableListTitle[listPosition]]
@@ -223,33 +226,55 @@ class CustomExpandableListAdapter(
         listTitleTextView.text = listTitle
         val listAddress = convertView.findViewById<View>(R.id.listTitleAddress) as TextView
         listAddress.text = busStopCode
-        val starButton =  convertView
+        val starButton = convertView
             .findViewById<View>(R.id.starButton) as ImageButton
         starButton.isFocusable = false
-        Log.d(TAG,"Retrieved busStopCode is $busStopCode")
-        if (busStopCode != null){
-            setListenerForStar(starButton,busStopCode)
+        Log.d(TAG, "Retrieved busStopCode is $busStopCode")
+        if (busStopCode != null) {
+            setListenerForStar(starButton, busStopCode)
         }
         return convertView
     }
 
-    private fun setListenerForStar(starButton : ImageButton, busStopCode: String){
+    private fun setListenerForStar(starButton: ImageButton, busStopCode: String) {
+        poolThread.execute {
+            if (sharedPreference.checkIfExistsInList(busStopCode)) {
+                mainThread.post {
+                    starButton.setImageDrawable(
+                        ContextCompat.getDrawable(
+                            context,
+                            android.R.drawable.btn_star_big_on
+                        )
+                    )
+                    starButton.setTag(R.string.button_view_tag, true)
+                }
+            }
+        }
         starButton.setOnClickListener {
             val previousTag = starButton.getTag(R.string.button_view_tag) ?: false
-            if (previousTag as Boolean){
-                poolThread.execute{
+            if (previousTag as Boolean) {
+                poolThread.execute {
                     sharedPreference.removeSharedPreferenceFromList(busStopCode)
                 }
-                starButton.setImageDrawable(ContextCompat.getDrawable(context,android.R.drawable.btn_star_big_off))
-            }else{
-                poolThread.execute{
+                starButton.setImageDrawable(
+                    ContextCompat.getDrawable(
+                        context,
+                        android.R.drawable.btn_star_big_off
+                    )
+                )
+            } else {
+                poolThread.execute {
                     sharedPreference.appendSharedPreferenceIntoList(busStopCode)
                 }
-                starButton.setImageDrawable(ContextCompat.getDrawable(context,android.R.drawable.btn_star_big_on))
+                starButton.setImageDrawable(
+                    ContextCompat.getDrawable(
+                        context,
+                        android.R.drawable.btn_star_big_on
+                    )
+                )
             }
-            starButton.setTag(R.string.button_view_tag,!previousTag)
+            starButton.setTag(R.string.button_view_tag, !previousTag)
         }
-
     }
 
     override fun hasStableIds(): Boolean {
