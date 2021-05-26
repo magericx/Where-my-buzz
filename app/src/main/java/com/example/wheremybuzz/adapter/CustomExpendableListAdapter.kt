@@ -16,6 +16,7 @@ import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
@@ -23,6 +24,7 @@ import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceMan
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.facebook.shimmer.ShimmerFrameLayout
 import java.util.*
+import java.util.concurrent.ExecutorService
 
 
 class CustomExpandableListAdapter(
@@ -33,11 +35,12 @@ class CustomExpandableListAdapter(
         const val TAG = "CustomExpendableListAdapter"
         const val shimmer = "shouldShimmer"
         const val shimmer2 = "noShimmer"
+        private val sharedPreference: SharedPreferenceHelper by lazy{
+            return@lazy SharedPreferenceManager.getfavouriteSharedPreferenceHelper
+        }
     }
-    private var isEnabled: Boolean = false
-    private val sharedPreference: SharedPreferenceHelper by lazy{
-        return@lazy SharedPreferenceManager.getfavouriteSharedPreferenceHelper
-    }
+
+    private val poolThread: ExecutorService = MyApplication.poolThread
 
     override fun getChild(listPosition: Int, expandedListPosition: Int): StoredBusMeta? {
         return expandableListDetail[expandableListTitle[listPosition]]
@@ -48,7 +51,7 @@ class CustomExpandableListAdapter(
         return expandedListPosition.toLong()
     }
 
-    fun getLayoutInflator(): LayoutInflater {
+    private fun getLayoutInflator(): LayoutInflater {
         return context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
     }
 
@@ -59,7 +62,7 @@ class CustomExpandableListAdapter(
     ): View? {
 
         var convertView: View? = convertView
-        var shimmeringLayoutView: ShimmerFrameLayout? = null
+        val shimmeringLayoutView: ShimmerFrameLayout?
         val shouldShowShimmer: Boolean
         val expandedListText =
             getChild(listPosition, expandedListPosition)
@@ -232,14 +235,19 @@ class CustomExpandableListAdapter(
 
     private fun setListenerForStar(starButton : ImageButton, busStopCode: String){
         starButton.setOnClickListener {
-            if (isEnabled){
+            val previousTag = starButton.getTag(R.string.button_view_tag) ?: false
+            if (previousTag as Boolean){
+                poolThread.execute{
+                    sharedPreference.removeSharedPreferenceFromList(busStopCode)
+                }
                 starButton.setImageDrawable(ContextCompat.getDrawable(context,android.R.drawable.btn_star_big_off))
-                //TODO remove sharedpreference from this click
             }else{
-                sharedPreference.appendSharedPreferenceIntoList(busStopCode)
+                poolThread.execute{
+                    sharedPreference.appendSharedPreferenceIntoList(busStopCode)
+                }
                 starButton.setImageDrawable(ContextCompat.getDrawable(context,android.R.drawable.btn_star_big_on))
             }
-            isEnabled = !isEnabled
+            starButton.setTag(R.string.button_view_tag,!previousTag)
         }
 
     }

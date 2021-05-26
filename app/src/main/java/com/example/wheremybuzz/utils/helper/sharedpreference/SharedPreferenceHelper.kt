@@ -10,6 +10,10 @@ class SharedPreferenceHelper(
     private val sharedPreference: SharedPreferences
 ) {
 
+    private val gsonInstance by lazy{
+        return@lazy Gson()
+    }
+
     fun getTimeSharedPreference(): Long {
         return sharedPreference.getLong(
             this.preferenceKeyName, 0
@@ -29,7 +33,7 @@ class SharedPreferenceHelper(
     }
 
     fun appendSharedPreferenceIntoList(text: String) {
-        val gson = Gson()
+        //val gson = Gson()
         sharedPreference.edit().let {
             val tempString = sharedPreference.getString(this.preferenceKeyName, "")
             //if first store
@@ -37,36 +41,51 @@ class SharedPreferenceHelper(
                 val textList: MutableList<String> =
                     ArrayList(data)
                 textList.add(0, text)
-                val jsonText = gson.toJson(textList)
+                val jsonText = gsonInstance.toJson(textList)
                 it.putString(this.preferenceKeyName, jsonText)
                 //if subsequent store
             } else {
-                val arrayString: Array<String> = gson.fromJson(
+                val arrayString: Array<String> = gsonInstance.fromJson(
                     tempString,
                     Array<String>::class.java
                 )
                 if (!arrayString.contains(text)){
                     val tempArrayList = arrayString.asList().toMutableList()
                     tempArrayList.add(tempArrayList.size,text)
-                    val jsonText = gson.toJson(tempArrayList.toTypedArray())
+                    val jsonText = gsonInstance.toJson(tempArrayList.toTypedArray())
                     it.putString(this.preferenceKeyName, jsonText)
                 }
             }
-            it.apply()
+            it.commit()
         }
     }
 
     //remove sharedpreference
     fun removeSharedPreferenceFromList(text: String){
-
-    }
-
-    fun overrideSharedPreference(text: String) {
-        sharedPreference.edit().let {
-            it.putString(this.preferenceKeyName, text)
-            it.apply()
+        //val gson = Gson()
+        val tempString = sharedPreference.getString(this.preferenceKeyName, "")
+        if (!tempString.isNullOrEmpty()){
+            val arrayString: Array<String> = gsonInstance.fromJson(
+                tempString,
+                Array<String>::class.java
+            )
+            if (arrayString.contains(text)){
+                val tempArrayList = arrayString.asList().toMutableList()
+                tempArrayList.remove(text)
+                overrideSharedPreference(tempArrayList.toTypedArray())
+            }
         }
     }
+
+    private fun overrideSharedPreference(newArray: Array<String>) {
+        sharedPreference.edit().let {
+            val jsonText = gsonInstance.toJson(newArray)
+            it.putString(this.preferenceKeyName, jsonText)
+            it.commit()
+        }
+    }
+
+
 
 
 }
