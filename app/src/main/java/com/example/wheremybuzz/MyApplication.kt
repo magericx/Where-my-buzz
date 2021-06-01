@@ -17,15 +17,18 @@ class MyApplication : Application(), Application.ActivityLifecycleCallbacks {
         Log.d(TAG, "Created instance of MyApplication here")
         instance = this
         poolThread = Executors.newFixedThreadPool(4)
+        poolThread2 = Executors.newFixedThreadPool(6)
         mainThreadHandler = HandlerCompat.createAsync(Looper.getMainLooper())
     }
     companion object {
-        val TAG = "MyApplication"
+        const val TAG = "MyApplication"
         lateinit var instance: MyApplication
             private set
         lateinit var poolThread: ExecutorService
             private set
         lateinit var mainThreadHandler: Handler
+            private set
+        lateinit var poolThread2: ExecutorService
             private set
     }
 
@@ -43,6 +46,11 @@ class MyApplication : Application(), Application.ActivityLifecycleCallbacks {
             poolThread.shutdown()
             poolThread.shutdownNow()
         }
+        if (!poolThread2.isTerminated || !poolThread2.isShutdown){
+            poolThread2.shutdown()
+            poolThread2.shutdownNow()
+        }
+
     }
 
     override fun onActivitySaveInstanceState(p0: Activity, p1: Bundle) {
@@ -64,6 +72,9 @@ class MyApplication : Application(), Application.ActivityLifecycleCallbacks {
         Log.d(TAG,"Called application onActivityResumed here")
         if (poolThread.isShutdown || poolThread.isTerminated){
             poolThread = Executors.newFixedThreadPool(4)
+        }
+        if (poolThread2.isShutdown || poolThread2.isTerminated){
+            poolThread2 = Executors.newFixedThreadPool(4)
         }
     }
 }

@@ -26,7 +26,6 @@ import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.facebook.shimmer.ShimmerFrameLayout
 import java.util.*
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Future
 
 
 class CustomExpandableListAdapter(

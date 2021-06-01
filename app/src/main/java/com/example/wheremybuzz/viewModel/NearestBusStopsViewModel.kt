@@ -6,6 +6,7 @@ import android.widget.ExpandableListAdapter
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.*
 import com.example.wheremybuzz.model.callback.BusScheduleMetaCallBack
@@ -26,8 +27,8 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
 
     private val applicationContext = getApplication<Application>().applicationContext
     lateinit var nearestBusStopsGeoListObservable: MutableLiveData<StatusEnum>
-    private val executorService: ExecutorService = Executors.newFixedThreadPool(4)
-    private val executorService2: ExecutorService = Executors.newFixedThreadPool(6)
+    var executorService: ExecutorService
+    var executorService2: ExecutorService
 
     private var expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
     private lateinit var expandableListAdapter: ExpandableListAdapter
@@ -44,6 +45,8 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         busStopCodeRepository = BusStopCodeRepository()
         busScheduleRepository = BusScheduleRepository()
         expandableListDetail = HashMap()
+        executorService = MyApplication.poolThread
+        executorService2 = MyApplication.poolThread2
     }
 
     fun getExpandableListDetail(): HashMap<String, MutableList<StoredBusMeta>> {
