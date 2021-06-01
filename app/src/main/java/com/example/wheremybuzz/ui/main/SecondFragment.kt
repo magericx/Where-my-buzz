@@ -144,8 +144,8 @@ class SecondFragment : Fragment() {
             ).show()
             //don't allow refresh if cell is expanding
             allowRefresh = false
-            val geoLocation =
-                viewModel.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
+//            val geoLocation =
+//                viewModel.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
             observeBusStopCodeModel(
                 (expandableListTitle as ArrayList<String>)[groupPosition]
             )
@@ -185,10 +185,10 @@ class SecondFragment : Fragment() {
         Log.d(TAG, "Call bus Stop code list API ")
         // Update the list when the data changes
         //viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
-        val busStopCode = viewModel.getExpandableListBusStopCode(expandableListTitle)
+        val busStopCode = viewModel.getExpandableFavouriteListBusStopCode(expandableListTitle) ?: return
         viewModel.getBusScheduleListObservable(
             busStopCode.busStopCode.toLong(),
-            expandableListTitle
+            expandableListTitle,1
         )
         allowRefresh = true
 
@@ -214,12 +214,12 @@ class SecondFragment : Fragment() {
                         disableShimmer()
                     }
                 })
-
     }
 
     //adapter for 2nd screen
     private fun createFavouriteExpandableListAdapter() {
-        expandableListAdapter = viewModel.setUpExpandableListAdapter(1)
+        viewModel.setUpExpandableListAdapter(1)
+        expandableListAdapter = viewModel.getexpandableFavouriteListAdapter()
         expandableListTitle = viewModel.getFavouriteExpandableListTitle()
         expandableListView.setAdapter(expandableListAdapter)
     }

@@ -203,10 +203,11 @@ class TabFragment : Fragment() {
         Log.d(TAG, "Call bus Stop code list API ")
         // Update the list when the data changes
         //viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
-        val busStopCode = viewModel?.getExpandableListBusStopCode(expandableListTitle)
+        val busStopCode = viewModel.getExpandableNearestListBusStopCode(expandableListTitle) ?: return
         viewModel?.getBusScheduleListObservable(
             busStopCode!!.busStopCode.toLong(),
-            expandableListTitle
+            expandableListTitle,
+            0
         )
         allowRefresh = true
 
@@ -214,8 +215,9 @@ class TabFragment : Fragment() {
 
     //adapter for 1st screen
     private fun createNearestExpandableListAdapter() {
-        expandableListAdapter = viewModel?.setUpExpandableListAdapter(0)!!
-        expandableListTitle = viewModel?.getNearestExpandableListTitle()!!
+        viewModel.setUpExpandableListAdapter(0)
+        expandableListAdapter = viewModel.getExpandableNearestListAdapter()
+        expandableListTitle = viewModel.getNearestExpandableListTitle()
         expandableListView!!.setAdapter(expandableListAdapter)
     }
 
