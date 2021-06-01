@@ -13,28 +13,28 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.model.callback.StatusCallBack
+import com.example.wheremybuzz.utils.helper.cache.CacheHelper
 import com.example.wheremybuzz.utils.helper.cache.CacheManager
 import com.example.wheremybuzz.utils.helper.network.NetworkUtil
+import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
-import com.example.wheremybuzz.utils.helper.cache.CacheHelper
-import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.material.button.MaterialButton
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.TimeUnit
 
 
 class TabFragment : Fragment() {
 
     companion object {
+        private const val location: String = "1.380308, 103.741256"
+        private const val firstIndex: Int = 0
+        private const val TAG: String = "TabFragment"
         fun getInstance(position: Int): Fragment {
             val bundle = Bundle()
             bundle.putInt("pos", position)
@@ -42,10 +42,6 @@ class TabFragment : Fragment() {
             tabFragment.arguments = bundle
             return tabFragment
         }
-
-        private const val location: String = "1.380308, 103.741256"
-        private const val firstIndex: Int = 0
-        private const val TAG: String = "TabFragment"
         private val timeUtil: TimeUtil =
             TimeUtil
         private const val forceUpdateCache = false
@@ -57,7 +53,7 @@ class TabFragment : Fragment() {
     lateinit var swipeContainer: SwipeRefreshLayout
     lateinit var expandableListAdapter: ExpandableListAdapter
     lateinit var expandableListTitle: List<String>
-    var viewModel: NearestBusStopsViewModel? = null
+    lateinit var viewModel: NearestBusStopsViewModel
 
     lateinit var sharedPreference: SharedPreferenceHelper
     lateinit var cacheHelper: CacheHelper
@@ -185,14 +181,12 @@ class TabFragment : Fragment() {
             Toast.makeText(
                 activity!!.applicationContext,
                 (expandableListTitle as ArrayList<String>)[groupPosition] + " -> "
-                        + viewModel?.getExpandableListDetail()!![(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
+                        + viewModel?.getExpandableNearestListDetail()!![(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
                 Toast.LENGTH_SHORT
             ).show()
             false
         }
-        swipeContainer.setOnRefreshListener { // Your code to refresh the list here.
-            // Make sure you call swipeContainer.setRefreshing(false)
-            // once the network request has completed successfully.
+        swipeContainer.setOnRefreshListener {
             refreshExpandedList(true)
         }
         swipeContainer.setColorSchemeResources(
@@ -220,8 +214,8 @@ class TabFragment : Fragment() {
 
     //adapter for 1st screen
     private fun createNearestExpandableListAdapter() {
-        expandableListAdapter = viewModel?.setUpNearestExpandableListAdapter()!!
-        expandableListTitle = viewModel?.getExpandableListTitle()!!
+        expandableListAdapter = viewModel?.setUpExpandableListAdapter(0)!!
+        expandableListTitle = viewModel?.getNearestExpandableListTitle()!!
         expandableListView!!.setAdapter(expandableListAdapter)
     }
 
@@ -335,7 +329,7 @@ class TabFragment : Fragment() {
         expandableListView = null
         viewModel?.destroyDisposable()
         viewModel?.destroyRepositories()
-        viewModel = null
+        activity?.viewModelStore?.clear()
         super.onDestroy()
     }
 }

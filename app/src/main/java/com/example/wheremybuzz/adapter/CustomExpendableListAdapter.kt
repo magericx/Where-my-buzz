@@ -37,7 +37,7 @@ class CustomExpandableListAdapter(
         const val shimmer = "shouldShimmer"
         const val shimmer2 = "noShimmer"
         private val sharedPreference: SharedPreferenceHelper by lazy {
-            return@lazy SharedPreferenceManager.getfavouriteSharedPreferenceHelper
+            return@lazy SharedPreferenceManager.getFavouriteSharedPreferenceHelper
         }
     }
 
@@ -147,8 +147,8 @@ class CustomExpandableListAdapter(
                 arriveTimeLabel.text = context.getString(R.string.not_applicable)
             } else {
                 when (calculateFirstArriveTime) {
-                    "0" -> arriveTimeLabel.text = context.getString(R.string.arrive)
-                    "ARR" -> arriveTimeLabel.text = context.getString(R.string.arrive)
+                    "0", "ARR" -> arriveTimeLabel.text = context.getString(R.string.arrive)
+                    //"ARR" -> arriveTimeLabel.text = context.getString(R.string.arrive)
                     else -> {
                         arriveTimeLabel.text = calculateFirstArriveTime
                     }
@@ -226,12 +226,12 @@ class CustomExpandableListAdapter(
         starButton.isFocusable = false
         Log.d(TAG, "Retrieved busStopCode is $busStopCode")
         if (busStopCode != null) {
-            setListenerForStar(starButton, busStopCode)
+            setListenerForStar(starButton, listTitle, busStopCode)
         }
         return convertView
     }
 
-    private fun setListenerForStar(starButton: ImageButton, busStopCode: String) {
+    private fun setListenerForStar(starButton: ImageButton, busStopName: String, busStopCode: String) {
         poolThread.execute {
             if (sharedPreference.checkIfExistsInList(busStopCode)) {
                 mainThread.post {
@@ -259,7 +259,7 @@ class CustomExpandableListAdapter(
                 )
             } else {
                 poolThread.execute {
-                    sharedPreference.appendSharedPreferenceIntoList(busStopCode)
+                    sharedPreference.appendSharedPreferenceIntoList(busStopName,busStopCode)
                 }
                 starButton.setImageDrawable(
                     ContextCompat.getDrawable(

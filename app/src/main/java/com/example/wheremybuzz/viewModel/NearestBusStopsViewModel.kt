@@ -16,7 +16,6 @@ import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
 import java.util.*
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 
 class NearestBusStopsViewModel(application: Application) : AndroidViewModel(application) {
@@ -27,12 +26,15 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
 
     private val applicationContext = getApplication<Application>().applicationContext
     lateinit var nearestBusStopsGeoListObservable: MutableLiveData<StatusEnum>
+    lateinit var favouriteBusStopsGeoListObservable: MutableLiveData<StatusEnum>
     var executorService: ExecutorService
     var executorService2: ExecutorService
 
-    private var expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
+    private var expandableNearestListDetail: HashMap<String, MutableList<StoredBusMeta>>
+    private var expandableFavouriteListDetail: HashMap<String, MutableList<StoredBusMeta>>
     private lateinit var expandableListAdapter: ExpandableListAdapter
-    private lateinit var expandableListTitle: List<String>
+    private lateinit var expandableNearestListTitle: List<String>
+    private lateinit var expandableFavouriteListTitle: List<String>
 
     private var busStopCodeTempCache: BusStopsCodeResponse? = null
 
@@ -44,34 +46,52 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         nearestBusRepository = NearestBusRepository()
         busStopCodeRepository = BusStopCodeRepository()
         busScheduleRepository = BusScheduleRepository()
-        expandableListDetail = HashMap()
+        expandableNearestListDetail = HashMap()
+        expandableFavouriteListDetail = HashMap()
         executorService = MyApplication.poolThread
         executorService2 = MyApplication.poolThread2
     }
 
-    fun getExpandableListDetail(): HashMap<String, MutableList<StoredBusMeta>> {
-        return expandableListDetail
+    fun getExpandableNearestListDetail(): HashMap<String, MutableList<StoredBusMeta>> {
+        return expandableNearestListDetail
+    }
+
+    private fun setExpandableNearestListDetail(key: String, list: MutableList<StoredBusMeta>) {
+        expandableNearestListDetail[key] = list
+    }
+
+    fun getExpandableFavouriteListDetail(): HashMap<String, MutableList<StoredBusMeta>> {
+        return expandableFavouriteListDetail
+    }
+
+    private fun setExpandableFavouriteListDetail(key: String, list: MutableList<StoredBusMeta>) {
+        expandableFavouriteListDetail[key] = list
+    }
+
+    private fun setInitialExpandableFavouriteListDetail(mapList: Map<String,String>) {
+        for ((k, v) in mapList) {
+            val staticBusMeta =
+                StoredBusMeta(k, GeoLocation(1.0, 1.0), null)
+            val staticListBusMeta: MutableList<StoredBusMeta> = mutableListOf(staticBusMeta)
+            setExpandableFavouriteListDetail(v, staticListBusMeta)
+        }
     }
 
     fun getExpandableListBusStopCode(busStopName: String): BusStopCode {
-        return if (expandableListDetail.containsKey(busStopName)){
-            BusStopCode(expandableListDetail[busStopName]?.get(0)?.BusStopCode!!)
-        }else{
+        return if (expandableNearestListDetail.containsKey(busStopName)) {
+            BusStopCode(expandableNearestListDetail[busStopName]?.get(0)?.BusStopCode!!)
+        } else {
             BusStopCode("")
         }
     }
 
-    private fun setExpandableListDetail(key: String, list: MutableList<StoredBusMeta>) {
-        expandableListDetail[key] = list
-    }
-
     private fun setBusStopCodeInExpendableListDetail(key: String, busStopCode: String) {
         Log.d(TAG, "setBusStopCodeInExpendableListDetail here")
-        if (expandableListDetail.containsKey(key)) {
-            val oldValue = expandableListDetail[key]
+        if (expandableNearestListDetail.containsKey(key)) {
+            val oldValue = expandableNearestListDetail[key]
             oldValue?.get(0)?.BusStopCode = busStopCode
             oldValue?.let {
-                expandableListDetail[key] = it
+                expandableNearestListDetail[key] = it
             }
         }
     }
@@ -79,8 +99,8 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     //Implementation for services
     private fun setServicesInExpendableListDetail(key: String, serviceList: List<Service>) {
         //Log.d(TAG, "expandableListDetails is $expandableListDetail")
-        if (expandableListDetail.containsKey(key)) {
-            val currentExpandableHashMap = expandableListDetail[key]
+        if (expandableNearestListDetail.containsKey(key)) {
+            val currentExpandableHashMap = expandableNearestListDetail[key]
             val oldBusStopCode = currentExpandableHashMap?.get(0)?.BusStopCode
             val oldGeoLocation = currentExpandableHashMap?.get(0)?.Geolocation
             currentExpandableHashMap?.clear()
@@ -93,37 +113,49 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     }
 
     private fun setupNearestExpandableListTitle() {
-        expandableListTitle = ArrayList<String>(expandableListDetail.keys)
+        expandableNearestListTitle = ArrayList<String>(expandableNearestListDetail.keys)
     }
 
-    fun setUpNearestExpandableListAdapter(): ExpandableListAdapter {
-        setupNearestExpandableListTitle()
-        expandableListAdapter =
-            CustomExpandableListAdapter(
+    private fun setupFavouriteExpandableListTitle() {
+        expandableFavouriteListTitle = ArrayList<String>(expandableFavouriteListDetail.keys)
+    }
+
+    //flag = integer, 0 = nearest, 1 = favourite
+    fun setUpExpandableListAdapter(flag: Int): ExpandableListAdapter {
+        if (flag == 0) setupNearestExpandableListTitle() else setupFavouriteExpandableListTitle()
+        return CustomExpandableListAdapter(
                 applicationContext,
-                expandableListTitle,
-                expandableListDetail
+                if (flag == 0) expandableNearestListTitle else expandableFavouriteListTitle,
+                if (flag == 0) expandableNearestListDetail else expandableFavouriteListDetail
             )
-        return expandableListAdapter
     }
 
-    fun getExpandableListTitle(): List<String> {
-        return expandableListTitle
+    fun getNearestExpandableListTitle(): List<String> {
+        return expandableNearestListTitle
+    }
+
+    fun getFavouriteExpandableListTitle(): List<String> {
+        return expandableFavouriteListTitle
     }
 
     fun updateExpandableListAdapter() {
         (expandableListAdapter as CustomExpandableListAdapter).notifyDataSetChanged()
     }
 
-    fun getExpandableListAdapter() : CustomExpandableListAdapter{
-        return expandableListAdapter as CustomExpandableListAdapter
-    }
-
     fun getGeoLocationBasedOnBusStopName(busStopName: String): GeoLocation {
         return GeoLocation(
-            expandableListDetail[busStopName]!![0].Geolocation.latitude,
-            expandableListDetail[busStopName]!![0].Geolocation.longitude
+            expandableNearestListDetail[busStopName]!![0].Geolocation.latitude,
+            expandableNearestListDetail[busStopName]!![0].Geolocation.longitude
         )
+    }
+
+    fun getFavouriteBusStopsGeoListObservable(listOfBusStopCodes: Map<String,String>): LiveData<StatusEnum>? {
+        favouriteBusStopsGeoListObservable = MutableLiveData()
+        executorService2.submit {
+            setInitialExpandableFavouriteListDetail(listOfBusStopCodes)
+            favouriteBusStopsGeoListObservable.postValue(StatusEnum.Success)
+        }
+        return favouriteBusStopsGeoListObservable
     }
 
     fun getNearestBusStopsGeoListObservable(location: String): LiveData<StatusEnum>? {
@@ -138,7 +170,6 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                             nearestBusStopsList[i]!!.latitude,
                             nearestBusStopsList[i]!!.longitude
                         )
-                        //TODO call busStopCode API here
                         busStopCodeRepository!!.getBusStopCodeFromCache(
                             busStopCodeTempCache,
                             nearestBusStopsList[i]!!.busStopName,
@@ -150,7 +181,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                                 val finalBusMeta =
                                     StoredBusMeta(busStopCode.busStopCode, geoLocation, null)
                                 busStopArrayList.add(finalBusMeta)
-                                setExpandableListDetail(
+                                setExpandableNearestListDetail(
                                     nearestBusStopsList[i]!!.busStopName,
                                     busStopArrayList
                                 )
@@ -228,9 +259,9 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                     Log.d(TAG, "ServiceList size is ${it.servicesList.size}")
                     //update actual data holder
                     Log.d(TAG, "Retrieved key is ${it.servicesList[0].first}")
-                    Log.d(TAG, "Full set of keys are ${expandableListDetail.keys}")
+                    Log.d(TAG, "Full set of keys are ${expandableNearestListDetail.keys}")
                     for (i in it.servicesList) {
-                        if (expandableListDetail.containsKey(i.first)) {
+                        if (expandableNearestListDetail.containsKey(i.first)) {
                             Log.d(TAG, "Found key")
                             setServicesInExpendableListDetail(i.first, i.second.Services)
                         }

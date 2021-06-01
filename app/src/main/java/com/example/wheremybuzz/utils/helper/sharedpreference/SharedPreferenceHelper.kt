@@ -3,6 +3,8 @@ package com.example.wheremybuzz.utils.helper.sharedpreference
 import android.R.attr.data
 import android.content.SharedPreferences
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.lang.reflect.Type
 
 
 class SharedPreferenceHelper(
@@ -28,30 +30,26 @@ class SharedPreferenceHelper(
         }
     }
 
-    fun getSharedPreference(): String? {
-        return sharedPreference.getString(this.preferenceKeyName, "")
+    fun getSharedPreferenceAsMap(): Map<String, String>? {
+        val tempString = sharedPreference.getString(this.preferenceKeyName, "")
+        return tempString?.let { convertToMap(it) }
     }
 
-    fun appendSharedPreferenceIntoList(text: String) {
+    fun appendSharedPreferenceIntoList(busStopName: String, busStopCode: String) {
         sharedPreference.edit().let {
             val tempString = sharedPreference.getString(this.preferenceKeyName, "")
             //if first store
             if (tempString.isNullOrEmpty()) {
-                val textList: MutableList<String> =
-                    ArrayList(data)
-                textList.add(0, text)
-                val jsonText = gsonInstance.toJson(textList)
+                val mutableMap: Map<String, String> = mapOf(busStopCode to busStopName)
+                val jsonText = gsonInstance.toJson(mutableMap)
                 it.putString(this.preferenceKeyName, jsonText)
                 //if subsequent store
             } else {
-                val arrayString: Array<String> = gsonInstance.fromJson(
-                    tempString,
-                    Array<String>::class.java
-                )
-                if (!arrayString.contains(text)) {
-                    val tempArrayList = arrayString.asList().toMutableList()
-                    tempArrayList.add(tempArrayList.size, text)
-                    val jsonText = gsonInstance.toJson(tempArrayList.toTypedArray())
+                val mapString: Map<String, String> = convertToMap(tempString)
+                if (!mapString.containsKey(busStopCode)) {
+                    val mutableMap = mapString.toMutableMap()
+                    mutableMap[busStopCode] = busStopName
+                    val jsonText = gsonInstance.toJson(mutableMap)
                     it.putString(this.preferenceKeyName, jsonText)
                 }
             }
@@ -63,21 +61,18 @@ class SharedPreferenceHelper(
     fun removeSharedPreferenceFromList(text: String) {
         val tempString = sharedPreference.getString(this.preferenceKeyName, "")
         if (!tempString.isNullOrEmpty()) {
-            val arrayString: Array<String> = gsonInstance.fromJson(
-                tempString,
-                Array<String>::class.java
-            )
-            if (arrayString.contains(text)) {
-                val tempArrayList = arrayString.asList().toMutableList()
-                tempArrayList.remove(text)
-                overrideSharedPreference(tempArrayList.toTypedArray())
+            val mapString: Map<String, String> = convertToMap(tempString)
+            if (mapString.containsKey(text)) {
+                val mutableMapString = mapString.toMutableMap()
+                mutableMapString.remove(text)
+                overrideSharedPreference(mutableMapString.toMap())
             }
         }
     }
 
-    private fun overrideSharedPreference(newArray: Array<String>) {
+    private fun overrideSharedPreference(newMap: Map<String,String>) {
         sharedPreference.edit().let {
-            val jsonText = gsonInstance.toJson(newArray)
+            val jsonText = gsonInstance.toJson(newMap)
             it.putString(this.preferenceKeyName, jsonText)
             it.commit()
         }
@@ -86,12 +81,20 @@ class SharedPreferenceHelper(
     fun checkIfExistsInList(text: String): Boolean {
         val tempString = sharedPreference.getString(this.preferenceKeyName, "")
         if (!tempString.isNullOrEmpty()) {
-            val arrayString: Array<String> = gsonInstance.fromJson(
-                tempString,
-                Array<String>::class.java
-            )
-            return arrayString.contains(text)
+            val map = convertToMap(tempString)
+            return map.containsKey(text)
         }
         return false
+    }
+
+    fun checkIfListIsEmpty(): Boolean {
+        val tempString = sharedPreference.getString(this.preferenceKeyName, "")
+        return tempString.isNullOrEmpty()
+    }
+
+    private fun convertToMap(tempString: String): Map<String, String> {
+        val mapType: Type = object :
+            TypeToken<Map<String, String?>?>() {}.type
+        return gsonInstance.fromJson(tempString, mapType)
     }
 }
