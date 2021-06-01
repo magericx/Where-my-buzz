@@ -181,7 +181,7 @@ class TabFragment : Fragment() {
             Toast.makeText(
                 activity!!.applicationContext,
                 (expandableListTitle as ArrayList<String>)[groupPosition] + " -> "
-                        + viewModel?.getExpandableNearestListDetail()!![(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
+                        + viewModel.expandableNearestListDetail[(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
                 Toast.LENGTH_SHORT
             ).show()
             false

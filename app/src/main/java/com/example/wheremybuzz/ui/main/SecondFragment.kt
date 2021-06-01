@@ -163,7 +163,7 @@ class SecondFragment : Fragment() {
             Toast.makeText(
                 activity!!.applicationContext,
                 (expandableListTitle as ArrayList<String>)[groupPosition] + " -> "
-                        + viewModel.getExpandableNearestListDetail()[(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
+                        + viewModel.expandableFavouriteListDetail[(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
                 Toast.LENGTH_SHORT
             ).show()
             false

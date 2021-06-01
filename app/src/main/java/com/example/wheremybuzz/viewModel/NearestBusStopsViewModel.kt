@@ -30,8 +30,14 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     var executorService: ExecutorService
     var executorService2: ExecutorService
 
-    private var expandableNearestListDetail: HashMap<String, MutableList<StoredBusMeta>>
-    private var expandableFavouriteListDetail: HashMap<String, MutableList<StoredBusMeta>>
+    var expandableNearestListDetail: HashMap<String, MutableList<StoredBusMeta>>
+        get() {
+            return field
+        }
+    var expandableFavouriteListDetail: HashMap<String, MutableList<StoredBusMeta>>
+        get() {
+            return field
+        }
     private lateinit var expandableNearestListAdapter: ExpandableListAdapter
     private lateinit var expandableFavouriteListAdapter: ExpandableListAdapter
     private lateinit var expandableNearestListTitle: List<String>
@@ -61,16 +67,8 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return expandableFavouriteListAdapter
     }
 
-    fun getExpandableNearestListDetail(): HashMap<String, MutableList<StoredBusMeta>> {
-        return expandableNearestListDetail
-    }
-
     private fun setExpandableNearestListDetail(key: String, list: MutableList<StoredBusMeta>) {
         expandableNearestListDetail[key] = list
-    }
-
-    fun getExpandableFavouriteListDetail(): HashMap<String, MutableList<StoredBusMeta>> {
-        return expandableFavouriteListDetail
     }
 
     private fun setExpandableFavouriteListDetail(key: String, list: MutableList<StoredBusMeta>) {
@@ -308,7 +306,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                     for (i in it.servicesList) {
                         if (expandableNearestListDetail.containsKey(i.first)) {
                             Log.d(TAG, "Found key")
-                            setServicesInExpendableListDetail(i.first, i.second.Services,0)
+                            setServicesInExpendableListDetail(i.first, i.second.Services, 0)
                         }
                     }
                     Log.d(TAG, "PostValue observer here")
