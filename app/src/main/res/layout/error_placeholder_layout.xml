@@ -31,7 +31,7 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="50dp"
-        android:text="Restart App"
+        android:text="@string/restart_app"
         android:textAllCaps="false" />
 
 </RelativeLayout>

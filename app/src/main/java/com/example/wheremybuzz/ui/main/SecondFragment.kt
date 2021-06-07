@@ -19,6 +19,7 @@ import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.utils.helper.network.NetworkUtil
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
+import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.material.button.MaterialButton
@@ -43,9 +44,9 @@ class SecondFragment : Fragment() {
     lateinit var swipeContainer: SwipeRefreshLayout
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     private lateinit var expandableListView: ExpandableListView
-    lateinit var errorButton: MaterialButton
     lateinit var expandableListTitle: List<String>
     lateinit var expandableListAdapter: ExpandableListAdapter
+    private var errorView : ErrorView? = null
 
     private var allowRefresh = false
 
@@ -81,7 +82,8 @@ class SecondFragment : Fragment() {
             expandableListView = view.findViewById(R.id.expandableListView)
             Log.d(TAG, "debug expendable $expandableListView")
         } else {
-            view = inflateErrorPage(inflater, container)
+            errorView = ErrorView(context!!, container!!)
+            view = errorView!!.build()
         }
         return view as View
     }
@@ -91,37 +93,34 @@ class SecondFragment : Fragment() {
         if (enabledNetwork) {
             setListenersForOriginalView()
         } else {
-            setListenersForErrorView()
+            setListenersForErrorView(errorView!!)
         }
     }
 
-    private fun inflateErrorPage(inflater: LayoutInflater, container: ViewGroup?): View? {
-        val view = inflater.inflate(R.layout.error_placeholder_layout, container, false)
-        Log.d(TAG, "Inflate errorview here $view")
-        errorButton = view.findViewById(R.id.restartApp)
-        return view
-    }
-
-    private fun setListenersForErrorView() {
-        errorButton.setOnClickListener {
-            //casting is very expensive, do it once here
-            (view as ViewGroup).let {
-                Log.d(TAG, "Number of child views ${it.childCount}")
-                it.removeAllViews()
-                parentFragmentManager.beginTransaction()
-                    .detach(this)
-                    .attach(this)
-                    .commit()
+    private fun setListenersForErrorView(errorView: ErrorView) {
+        //casting is very expensive, do it once here
+        errorView.let{
+            it.setupErrorListeners {
+                (view as ViewGroup).let {
+                    Log.d(TAG, "Number of child views ${it.childCount}")
+                    it.removeAllViews()
+                    parentFragmentManager.beginTransaction()
+                        .detach(this)
+                        .attach(this)
+                        .commit()
+                }
             }
         }
     }
 
     private fun showErrorPage() {
         (view as ViewGroup).let {
+            if (errorView == null) {
+                errorView = ErrorView(context!!, it)
+            }
             it.removeAllViews()
-            val li = LayoutInflater.from(context)
-            it.addView(inflateErrorPage(li, it))
-            setListenersForErrorView()
+            it.addView(errorView!!.build())
+            setListenersForErrorView(errorView!!)
         }
     }
 
@@ -222,6 +221,25 @@ class SecondFragment : Fragment() {
         expandableListAdapter = viewModel.getexpandableFavouriteListAdapter()
         expandableListTitle = viewModel.getFavouriteExpandableListTitle()
         expandableListView.setAdapter(expandableListAdapter)
+    }
+
+    override fun onResume() {
+        super.onResume()
+    }
+
+    override fun onPause() {
+        Log.d(TAG, "onPause is called")
+        viewModel.destroyDisposable()
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        Log.d(TAG, "onDestroy is called")
+        errorView = null
+        viewModel.destroyDisposable()
+        viewModel.destroyRepositories()
+        activity?.viewModelStore?.clear()
+        super.onDestroy()
     }
 
 

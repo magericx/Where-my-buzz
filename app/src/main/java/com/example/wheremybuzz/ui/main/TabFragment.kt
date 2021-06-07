@@ -10,9 +10,11 @@ import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.example.wheremybuzz.MainActivity
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.StatusEnum
@@ -24,9 +26,11 @@ import com.example.wheremybuzz.utils.helper.network.NetworkUtil
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
+import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.material.button.MaterialButton
+import java.lang.ref.WeakReference
 
 
 class TabFragment : Fragment() {
@@ -42,6 +46,7 @@ class TabFragment : Fragment() {
             tabFragment.arguments = bundle
             return tabFragment
         }
+
         private val timeUtil: TimeUtil =
             TimeUtil
         private const val forceUpdateCache = false
@@ -59,7 +64,8 @@ class TabFragment : Fragment() {
     lateinit var cacheHelper: CacheHelper
     private var allowRefresh = false
     private var enabledNetwork = false
-    lateinit var errorButton: MaterialButton
+    lateinit var parentView: View
+    private var errorView: ErrorView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,7 +89,7 @@ class TabFragment : Fragment() {
             ) {
                 Log.d(TAG, "Cache file does not exists or expired")
                 //let background thread handle the heavy workload
-                viewModel?.retrieveBusStopCodesAndSaveCache()
+                viewModel.retrieveBusStopCodesAndSaveCache()
                 sharedPreference.setTimeSharedPreference()
             }
             observeNearestBusStopsModel()
@@ -97,20 +103,20 @@ class TabFragment : Fragment() {
         //refetch network status again for second time, since onCreate won't be called anymore
         enabledNetwork = NetworkUtil.haveNetworkConnection()
         Log.d(TAG, "Invoke onCreateView here")
-        val view: View?
         Log.d(TAG, "enabledNetwork in onCreateView is $enabledNetwork")
         if (enabledNetwork) {
-            view = inflater.inflate(R.layout.fragment_tab, container, false)
-            shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
-            swipeContainer = view.findViewById(R.id.swipeContainer)!!
+            parentView = inflater.inflate(R.layout.fragment_tab, container, false)
+            shimmeringLayoutView = parentView.findViewById(R.id.shimmer_view_container)
+            swipeContainer = parentView.findViewById(R.id.swipeContainer)!!
             enableShimmer()
-            expandableListView = view.findViewById(R.id.expandableListView)
+            expandableListView = parentView.findViewById(R.id.expandableListView)
             Log.d(TAG, "debug expendable $expandableListView")
         } else {
-            view = inflateErrorPage(inflater, container)
+            errorView = ErrorView(context!!, container!!)
+            parentView = errorView!!.build()
         }
         Log.d(TAG, "Return view here $view")
-        return view as View
+        return parentView as View
     }
 
     override fun onViewCreated(view: View, @Nullable savedInstanceState: Bundle?) {
@@ -119,37 +125,35 @@ class TabFragment : Fragment() {
         if (enabledNetwork) {
             setListenersForOriginalView()
         } else {
-            setListenersForErrorView()
+            //callback from ErrorView listener
+            setListenersForErrorView(errorView!!)
         }
     }
 
-    private fun setListenersForErrorView() {
-        errorButton.setOnClickListener {
-            //casting is very expensive, do it once here
-            (view as ViewGroup).let {
-                Log.d(TAG, "Number of child views ${it.childCount}")
-                it.removeAllViews()
-                parentFragmentManager.beginTransaction()
-                    .detach(this)
-                    .attach(this)
-                    .commit()
+    private fun setListenersForErrorView(errorView: ErrorView) {
+        //casting is very expensive, do it once here
+        errorView.let{
+            it.setupErrorListeners {
+                (view as ViewGroup).let {
+                    Log.d(TAG, "Number of child views ${it.childCount}")
+                    it.removeAllViews()
+                    parentFragmentManager.beginTransaction()
+                        .detach(this)
+                        .attach(this)
+                        .commit()
+                }
             }
         }
     }
 
-    private fun inflateErrorPage(inflater: LayoutInflater, container: ViewGroup?): View? {
-        val view = inflater.inflate(R.layout.error_placeholder_layout, container, false)
-        Log.d(TAG, "Inflate errorview here $view")
-        errorButton = view.findViewById(R.id.restartApp)
-        return view
-    }
-
     private fun showErrorPage() {
         (view as ViewGroup).let {
+            if (errorView == null) {
+                errorView = ErrorView( context!!, it)
+            }
             it.removeAllViews()
-            val li = LayoutInflater.from(context)
-            it.addView(inflateErrorPage(li, it))
-            setListenersForErrorView()
+            it.addView(errorView!!.build())
+            setListenersForErrorView(errorView!!)
         }
     }
 
@@ -163,7 +167,7 @@ class TabFragment : Fragment() {
             //don't allow refresh if cell is expanding
             allowRefresh = false
             val geoLocation =
-                viewModel?.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
+                viewModel.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
             observeBusStopCodeModel(
                 (expandableListTitle as ArrayList<String>)[groupPosition]
             )
@@ -203,9 +207,10 @@ class TabFragment : Fragment() {
         Log.d(TAG, "Call bus Stop code list API ")
         // Update the list when the data changes
         //viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
-        val busStopCode = viewModel.getExpandableNearestListBusStopCode(expandableListTitle) ?: return
-        viewModel?.getBusScheduleListObservable(
-            busStopCode!!.busStopCode.toLong(),
+        val busStopCode =
+            viewModel.getExpandableNearestListBusStopCode(expandableListTitle) ?: return
+        viewModel.getBusScheduleListObservable(
+            busStopCode.busStopCode.toLong(),
             expandableListTitle,
             0
         )
@@ -224,7 +229,7 @@ class TabFragment : Fragment() {
     private fun observeNearestBusStopsModel() {
         Log.d(TAG, "Call nearest bus stop API ")
         // Update the list when the data changes
-        viewModel?.getNearestBusStopsGeoListObservable(location)
+        viewModel.getNearestBusStopsGeoListObservable(location)
             ?.observe(viewLifecycleOwner,
                 Observer<StatusEnum> { status ->
                     if (status != null) {
@@ -262,7 +267,7 @@ class TabFragment : Fragment() {
         val list: HashMap<String, String>? = getCurrentExpandedList()
         if (!list.isNullOrEmpty()) {
             Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
-            viewModel?.refreshExpandedBusStops(list, object : StatusCallBack {
+            viewModel.refreshExpandedBusStops(list, object : StatusCallBack {
                 override fun updateOnResult(status: Boolean) {
                     if (status) {
                         if (!swipeRefresh) {
@@ -322,15 +327,16 @@ class TabFragment : Fragment() {
 
     override fun onPause() {
         Log.d(TAG, "onPause is called")
-        viewModel?.destroyDisposable()
+        viewModel.destroyDisposable()
         super.onPause()
     }
 
     override fun onDestroy() {
         Log.d(TAG, "onDestroy is called")
+        errorView = null
         expandableListView = null
-        viewModel?.destroyDisposable()
-        viewModel?.destroyRepositories()
+        viewModel.destroyDisposable()
+        viewModel.destroyRepositories()
         activity?.viewModelStore?.clear()
         super.onDestroy()
     }
