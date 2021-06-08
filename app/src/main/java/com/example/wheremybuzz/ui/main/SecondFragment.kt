@@ -22,7 +22,6 @@ import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceMan
 import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
-import com.google.android.material.button.MaterialButton
 
 class SecondFragment : Fragment() {
 
@@ -46,7 +45,7 @@ class SecondFragment : Fragment() {
     private lateinit var expandableListView: ExpandableListView
     lateinit var expandableListTitle: List<String>
     lateinit var expandableListAdapter: ExpandableListAdapter
-    private var errorView : ErrorView? = null
+    private var errorView: ErrorView? = null
 
     private var allowRefresh = false
 
@@ -82,7 +81,7 @@ class SecondFragment : Fragment() {
             expandableListView = view.findViewById(R.id.expandableListView)
             Log.d(TAG, "debug expendable $expandableListView")
         } else {
-            errorView = ErrorView(context!!, container!!)
+            errorView = ErrorView(activity!!, container!!)
             view = errorView!!.build()
         }
         return view as View
@@ -99,7 +98,7 @@ class SecondFragment : Fragment() {
 
     private fun setListenersForErrorView(errorView: ErrorView) {
         //casting is very expensive, do it once here
-        errorView.let{
+        errorView.let {
             it.setupErrorListeners {
                 (view as ViewGroup).let {
                     Log.d(TAG, "Number of child views ${it.childCount}")
@@ -116,7 +115,7 @@ class SecondFragment : Fragment() {
     private fun showErrorPage() {
         (view as ViewGroup).let {
             if (errorView == null) {
-                errorView = ErrorView(context!!, it)
+                errorView = ErrorView(activity!!, it)
             }
             it.removeAllViews()
             it.addView(errorView!!.build())
@@ -184,10 +183,11 @@ class SecondFragment : Fragment() {
         Log.d(TAG, "Call bus Stop code list API ")
         // Update the list when the data changes
         //viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
-        val busStopCode = viewModel.getExpandableFavouriteListBusStopCode(expandableListTitle) ?: return
+        val busStopCode =
+            viewModel.getExpandableFavouriteListBusStopCode(expandableListTitle) ?: return
         viewModel.getBusScheduleListObservable(
             busStopCode.busStopCode.toLong(),
-            expandableListTitle,1
+            expandableListTitle, 1
         )
         allowRefresh = true
 

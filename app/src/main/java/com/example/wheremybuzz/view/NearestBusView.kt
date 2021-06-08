@@ -9,11 +9,12 @@ import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.ExpandableListView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.facebook.shimmer.ShimmerFrameLayout
 
 class NearestBusView(context: Context, view: ViewGroup){
-    private val context = context
+    var mContext:Context = MyApplication.instance.applicationContext
     private val container = view
     lateinit var swipeContainer: SwipeRefreshLayout
     lateinit var shimmeringLayoutView: ShimmerFrameLayout
@@ -25,11 +26,11 @@ class NearestBusView(context: Context, view: ViewGroup){
         private val TAG = "NearestBusView"
     }
 
-    fun getNearestBusView(): View?{
+    fun build(): View{
         if (parentView == null){
-            onViewInit(context,container)
+            onViewInit(mContext,container)
         }
-        return parentView
+        return parentView!!
     }
 
     private fun onViewInit(context: Context, container: ViewGroup) {

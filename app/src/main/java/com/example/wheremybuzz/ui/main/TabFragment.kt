@@ -1,5 +1,8 @@
 package com.example.wheremybuzz.ui.main
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -9,12 +12,11 @@ import android.widget.ExpandableListAdapter
 import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.annotation.Nullable
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.example.wheremybuzz.MainActivity
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.StatusEnum
@@ -23,20 +25,25 @@ import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.utils.helper.cache.CacheHelper
 import com.example.wheremybuzz.utils.helper.cache.CacheManager
 import com.example.wheremybuzz.utils.helper.network.NetworkUtil
+import com.example.wheremybuzz.utils.helper.permission.LocationCallback
+import com.example.wheremybuzz.utils.helper.permission.LocationPermissionHelper
+import com.example.wheremybuzz.utils.helper.permission.LocationServicesHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.example.wheremybuzz.view.ErrorView
+import com.example.wheremybuzz.view.NearestBusView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
-import com.google.android.material.button.MaterialButton
-import java.lang.ref.WeakReference
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 
 
 class TabFragment : Fragment() {
 
     companion object {
-        private const val location: String = "1.380308, 103.741256"
+        //TODO create a data structure for location
+        private var location: String = "1.380308, 103.741256"
         private const val firstIndex: Int = 0
         private const val TAG: String = "TabFragment"
         fun getInstance(position: Int): Fragment {
@@ -55,17 +62,21 @@ class TabFragment : Fragment() {
     var position = 0
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     var expandableListView: ExpandableListView? = null
-    lateinit var swipeContainer: SwipeRefreshLayout
-    lateinit var expandableListAdapter: ExpandableListAdapter
-    lateinit var expandableListTitle: List<String>
-    lateinit var viewModel: NearestBusStopsViewModel
+    private lateinit var swipeContainer: SwipeRefreshLayout
+    private lateinit var expandableListAdapter: ExpandableListAdapter
+    private lateinit var expandableListTitle: List<String>
+    private lateinit var viewModel: NearestBusStopsViewModel
 
-    lateinit var sharedPreference: SharedPreferenceHelper
-    lateinit var cacheHelper: CacheHelper
+    private lateinit var sharedPreference: SharedPreferenceHelper
+    private lateinit var cacheHelper: CacheHelper
     private var allowRefresh = false
     private var enabledNetwork = false
     lateinit var parentView: View
     private var errorView: ErrorView? = null
+
+    //private var nearestBusView: NearestBusView? = null
+    private lateinit var locationServicesHelper: LocationServicesHelper
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,6 +91,7 @@ class TabFragment : Fragment() {
             ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
                 NearestBusStopsViewModel::class.java
             )
+        locationServicesHelper = LocationServicesHelper(activity!!)
         if (enabledNetwork) {
             // check if busStopCode is empty or missing, retrieve and save to cache
             cacheHelper = CacheManager.initializeCacheHelper!!
@@ -92,7 +104,21 @@ class TabFragment : Fragment() {
                 viewModel.retrieveBusStopCodesAndSaveCache()
                 sharedPreference.setTimeSharedPreference()
             }
-            observeNearestBusStopsModel()
+
+            //TODO change logic to pull lastLocation dynamically instead of using hardcoded location
+            locationServicesHelper.checkForLastLocation(object : LocationCallback {
+                override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
+                    if (statusEnum == StatusEnum.Success) {
+                        observeNearestBusStopsModel()
+                    } else {
+                        Toast.makeText(
+                            activity!!.applicationContext, R.string.location_failed,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        disableShimmer()
+                    }
+                }
+            })
         }
     }
 
@@ -105,6 +131,8 @@ class TabFragment : Fragment() {
         Log.d(TAG, "Invoke onCreateView here")
         Log.d(TAG, "enabledNetwork in onCreateView is $enabledNetwork")
         if (enabledNetwork) {
+//            nearestBusView = NearestBusView(activity!!,container!!)
+//            parentView = nearestBusView!!.build()
             parentView = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = parentView.findViewById(R.id.shimmer_view_container)
             swipeContainer = parentView.findViewById(R.id.swipeContainer)!!
@@ -112,11 +140,11 @@ class TabFragment : Fragment() {
             expandableListView = parentView.findViewById(R.id.expandableListView)
             Log.d(TAG, "debug expendable $expandableListView")
         } else {
-            errorView = ErrorView(context!!, container!!)
+            errorView = ErrorView(activity!!, container!!)
             parentView = errorView!!.build()
         }
         Log.d(TAG, "Return view here $view")
-        return parentView as View
+        return parentView
     }
 
     override fun onViewCreated(view: View, @Nullable savedInstanceState: Bundle?) {
@@ -132,11 +160,11 @@ class TabFragment : Fragment() {
 
     private fun setListenersForErrorView(errorView: ErrorView) {
         //casting is very expensive, do it once here
-        errorView.let{
+        errorView.let {
             it.setupErrorListeners {
-                (view as ViewGroup).let {
-                    Log.d(TAG, "Number of child views ${it.childCount}")
-                    it.removeAllViews()
+                (view as ViewGroup).let { container ->
+                    Log.d(TAG, "Number of child views ${container.childCount}")
+                    container.removeAllViews()
                     parentFragmentManager.beginTransaction()
                         .detach(this)
                         .attach(this)
@@ -149,7 +177,7 @@ class TabFragment : Fragment() {
     private fun showErrorPage() {
         (view as ViewGroup).let {
             if (errorView == null) {
-                errorView = ErrorView( context!!, it)
+                errorView = ErrorView(activity!!, it)
             }
             it.removeAllViews()
             it.addView(errorView!!.build())
@@ -166,8 +194,7 @@ class TabFragment : Fragment() {
             ).show()
             //don't allow refresh if cell is expanding
             allowRefresh = false
-            val geoLocation =
-                viewModel.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
+            viewModel.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
             observeBusStopCodeModel(
                 (expandableListTitle as ArrayList<String>)[groupPosition]
             )
@@ -256,10 +283,6 @@ class TabFragment : Fragment() {
 
     private fun disableShimmer() {
         shimmeringLayoutView?.stopShimmerAnimation()
-        shimmeringLayoutView?.visibility = View.INVISIBLE
-    }
-
-    private fun hideShimmeringLayout() {
         shimmeringLayoutView?.visibility = View.INVISIBLE
     }
 

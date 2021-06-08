@@ -12,4 +12,5 @@
     <string name="ouch_something_went_wrong">Something went wrong</string>
     <string name="button_view_tag">button_view_tag</string>
     <string name="restart_app">Restart App</string>
+    <string name="location_failed">Failed to get location</string>
 </resources>

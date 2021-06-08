@@ -4,32 +4,43 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.FragmentActivity
+import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.google.android.material.button.MaterialButton
+import java.lang.ref.WeakReference
 
-//import java.lang.ref.WeakReference
+class ErrorView(activity: FragmentActivity, view: ViewGroup){
 
-class ErrorView(/*activity: TabFragment,*/ context: Context, view: ViewGroup){
-
-    //var mActivity: WeakReference<TabFragment> = activity as WeakReference<TabFragment>
-    private val context: Context = context
+    //var mActivity: WeakReference<FragmentActivity>? = null
+    var mContext:Context = MyApplication.instance.applicationContext
     private val container : ViewGroup = view
     lateinit var errorButton: MaterialButton
-    lateinit var parentView: View
+    private var parentView: View? = null
 
     companion object{
         private val TAG = "ErrorView"
     }
 
+    init{
+        //mActivity = WeakReference(activity)
+    }
+
     private fun getInflater(): LayoutInflater {
-        return LayoutInflater.from(context)
+        return LayoutInflater.from(mContext)
     }
 
     fun build(): View {
+        if (parentView == null){
+            onViewInit()
+        }
+        return parentView!!
+    }
+
+    private fun onViewInit(){
         val inflater = getInflater()
         parentView  = inflater.inflate(R.layout.error_placeholder_layout, container, false)
         setupSubViews(parentView)
-        return parentView
     }
 
     private fun setupSubViews(view:View?){
@@ -41,4 +52,5 @@ class ErrorView(/*activity: TabFragment,*/ context: Context, view: ViewGroup){
             listener()
         }
     }
+
 }
