@@ -34,4 +34,13 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val TAG = "MainActivity"
     }
+
+//    override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<String>,
+//        grantResults: IntArray
+//    ) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//        Log.d(TAG,"Callback received here")
+//    }
 }

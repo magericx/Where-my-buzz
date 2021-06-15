@@ -1,8 +1,11 @@
 package com.example.wheremybuzz.ui.main
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,11 +15,15 @@ import android.widget.ExpandableListAdapter
 import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.annotation.Nullable
-import androidx.core.app.ActivityCompat
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.example.wheremybuzz.LocationConstants
+import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.StatusEnum
@@ -26,17 +33,13 @@ import com.example.wheremybuzz.utils.helper.cache.CacheHelper
 import com.example.wheremybuzz.utils.helper.cache.CacheManager
 import com.example.wheremybuzz.utils.helper.network.NetworkUtil
 import com.example.wheremybuzz.utils.helper.permission.LocationCallback
-import com.example.wheremybuzz.utils.helper.permission.LocationPermissionHelper
 import com.example.wheremybuzz.utils.helper.permission.LocationServicesHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.example.wheremybuzz.view.ErrorView
-import com.example.wheremybuzz.view.NearestBusView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 
 
 class TabFragment : Fragment() {
@@ -57,8 +60,11 @@ class TabFragment : Fragment() {
         private val timeUtil: TimeUtil =
             TimeUtil
         private const val forceUpdateCache = false
+        private const val MY_PERMISSIONS_REQUEST_LOCATION =
+            LocationConstants.MY_PERMISSIONS_REQUEST_LOCATION
     }
 
+    private val mContext: Context = MyApplication.instance.applicationContext
     var position = 0
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     var expandableListView: ExpandableListView? = null
@@ -77,6 +83,24 @@ class TabFragment : Fragment() {
     //private var nearestBusView: NearestBusView? = null
     private lateinit var locationServicesHelper: LocationServicesHelper
 
+    private var locationCallback: LocationCallback = object : LocationCallback {
+        override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
+            if (statusEnum == StatusEnum.Success) {
+                Toast.makeText(
+                    activity!!.applicationContext, "Retrieved location is $location",
+                    Toast.LENGTH_SHORT
+                ).show()
+                observeNearestBusStopsModel()
+            } else {
+                Toast.makeText(
+                    activity!!.applicationContext, R.string.location_failed,
+                    Toast.LENGTH_SHORT
+                ).show()
+                disableShimmer()
+            }
+        }
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,6 +108,7 @@ class TabFragment : Fragment() {
         enabledNetwork = NetworkUtil.haveNetworkConnection()
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         this.sharedPreference = SharedPreferenceManager.getSharedPreferenceHelper
@@ -91,7 +116,7 @@ class TabFragment : Fragment() {
             ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
                 NearestBusStopsViewModel::class.java
             )
-        locationServicesHelper = LocationServicesHelper(activity!!)
+        locationServicesHelper = LocationServicesHelper(this.activity as Activity)
         if (enabledNetwork) {
             // check if busStopCode is empty or missing, retrieve and save to cache
             cacheHelper = CacheManager.initializeCacheHelper!!
@@ -106,19 +131,7 @@ class TabFragment : Fragment() {
             }
 
             //TODO change logic to pull lastLocation dynamically instead of using hardcoded location
-            locationServicesHelper.checkForLastLocation(object : LocationCallback {
-                override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
-                    if (statusEnum == StatusEnum.Success) {
-                        observeNearestBusStopsModel()
-                    } else {
-                        Toast.makeText(
-                            activity!!.applicationContext, R.string.location_failed,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        disableShimmer()
-                    }
-                }
-            })
+            locationServicesHelper.checkForLastLocation(this, locationCallback)
         }
     }
 
@@ -253,6 +266,7 @@ class TabFragment : Fragment() {
         expandableListView!!.setAdapter(expandableListAdapter)
     }
 
+    //TODO change to accept location as argument
     private fun observeNearestBusStopsModel() {
         Log.d(TAG, "Call nearest bus stop API ")
         // Update the list when the data changes
@@ -361,6 +375,44 @@ class TabFragment : Fragment() {
         viewModel.destroyDisposable()
         viewModel.destroyRepositories()
         activity?.viewModelStore?.clear()
+        locationServicesHelper.destroyLocationServicesHelper()
         super.onDestroy()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        when (requestCode) {
+            MY_PERMISSIONS_REQUEST_LOCATION -> {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (mContext.let {
+                            ContextCompat.checkSelfPermission(
+                                it,
+                                Manifest.permission.ACCESS_FINE_LOCATION
+                            )
+                        } == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        locationServicesHelper.checkForLastLocation(this, locationCallback)
+                    }
+                } else {
+                    //TODO shift dialog into a customisable dialog class and add callback
+                    AlertDialog.Builder(this.requireContext())
+                        .setTitle("Location Permission Needed")
+                        .setMessage("This app needs the Location permission, please accept to use location functionality")
+                        .setPositiveButton(
+                            "OK"
+                        ) { _, _ ->
+                            locationServicesHelper.requestForLocationPermission(this)
+                        }
+                        .create()
+                        .show()
+                }
+                return
+            }
+        }
     }
 }
