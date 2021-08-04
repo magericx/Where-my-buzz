@@ -16,7 +16,6 @@ import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -26,6 +25,7 @@ import com.example.wheremybuzz.LocationConstants
 import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
+import com.example.wheremybuzz.model.GeoLocation
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.model.callback.StatusCallBack
@@ -37,6 +37,9 @@ import com.example.wheremybuzz.utils.helper.permission.LocationServicesHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
+import com.example.wheremybuzz.view.Alert
+//import com.example.wheremybuzz.view.AlertDialogView
+import com.example.wheremybuzz.view.DialogCallback
 import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
@@ -45,8 +48,6 @@ import com.facebook.shimmer.ShimmerFrameLayout
 class TabFragment : Fragment() {
 
     companion object {
-        //TODO create a data structure for location
-        private var location: String = "1.380308, 103.741256"
         private const val firstIndex: Int = 0
         private const val TAG: String = "TabFragment"
         fun getInstance(position: Int): Fragment {
@@ -79,6 +80,7 @@ class TabFragment : Fragment() {
     private var enabledNetwork = false
     lateinit var parentView: View
     private var errorView: ErrorView? = null
+    var numberOfTries = 0
 
     //private var nearestBusView: NearestBusView? = null
     private lateinit var locationServicesHelper: LocationServicesHelper
@@ -86,12 +88,24 @@ class TabFragment : Fragment() {
     private var locationCallback: LocationCallback = object : LocationCallback {
         override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
             if (statusEnum == StatusEnum.Success) {
-                Toast.makeText(
-                    activity!!.applicationContext, "Retrieved location is $location",
-                    Toast.LENGTH_SHORT
-                ).show()
-                observeNearestBusStopsModel()
+                var tempLatitude = 0.0
+                var tempLongitude = 0.0
+                location.let {
+                    it?.latitude?.let { latitude ->
+                        tempLatitude = latitude
+                    }
+                    it?.longitude?.let { longitude ->
+                        tempLongitude = longitude
+                    }
+                }
+                observeNearestBusStopsModel(
+                    GeoLocation(
+                        latitude = tempLatitude,
+                        longitude = tempLongitude
+                    )
+                )
             } else {
+                showErrorPage()
                 Toast.makeText(
                     activity!!.applicationContext, R.string.location_failed,
                     Toast.LENGTH_SHORT
@@ -267,7 +281,7 @@ class TabFragment : Fragment() {
     }
 
     //TODO change to accept location as argument
-    private fun observeNearestBusStopsModel() {
+    private fun observeNearestBusStopsModel(location: GeoLocation) {
         Log.d(TAG, "Call nearest bus stop API ")
         // Update the list when the data changes
         viewModel.getNearestBusStopsGeoListObservable(location)
@@ -399,19 +413,25 @@ class TabFragment : Fragment() {
                         locationServicesHelper.checkForLastLocation(this, locationCallback)
                     }
                 } else {
-                    //TODO shift dialog into a customisable dialog class and add callback
-                    AlertDialog.Builder(this.requireContext())
-                        .setTitle("Location Permission Needed")
-                        .setMessage("This app needs the Location permission, please accept to use location functionality")
-                        .setPositiveButton(
-                            "OK"
-                        ) { _, _ ->
-                            locationServicesHelper.requestForLocationPermission(this)
-                        }
-                        .create()
-                        .show()
+                    if (numberOfTries <= 1) {
+                        //TODO shift dialog into a customisable dialog class and add callback
+                        val mAlert = Alert(this.requireContext())
+                        mAlert.setTitle("This is Error Warning")
+                        //mAlert.setIcon(android.R.drawable.ic_dialog_alert)
+                        //mAlert.setMessage("Do you want to delete?")
+                        mAlert.setPositveButton("Yes", View.OnClickListener {
+                            mAlert.dismiss()
+                        })
+
+                        mAlert.setNegativeButton("No", View.OnClickListener {
+                            mAlert.dismiss()
+                        })
+
+                        mAlert.show()
+                        return
+                    }
+                    showErrorPage()
                 }
-                return
             }
         }
     }

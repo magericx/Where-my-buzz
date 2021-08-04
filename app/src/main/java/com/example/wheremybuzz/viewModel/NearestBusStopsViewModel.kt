@@ -195,7 +195,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return favouriteBusStopsGeoListObservable
     }
 
-    fun getNearestBusStopsGeoListObservable(location: String): LiveData<StatusEnum>? {
+    fun getNearestBusStopsGeoListObservable(location: GeoLocation): LiveData<StatusEnum>? {
         nearestBusStopsGeoListObservable = MutableLiveData()
         executorService2.submit {
             nearestBusRepository!!.getNearestBusStops(location) {

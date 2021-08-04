@@ -231,7 +231,11 @@ class CustomExpandableListAdapter(
         return convertView
     }
 
-    private fun setListenerForStar(starButton: ImageButton, busStopName: String, busStopCode: String) {
+    private fun setListenerForStar(
+        starButton: ImageButton,
+        busStopName: String,
+        busStopCode: String
+    ) {
         poolThread.execute {
             if (sharedPreference.checkIfExistsInList(busStopCode)) {
                 mainThread.post {
@@ -259,7 +263,7 @@ class CustomExpandableListAdapter(
                 )
             } else {
                 poolThread.execute {
-                    sharedPreference.appendSharedPreferenceIntoList(busStopName,busStopCode)
+                    sharedPreference.appendSharedPreferenceIntoList(busStopName, busStopCode)
                 }
                 starButton.setImageDrawable(
                     ContextCompat.getDrawable(

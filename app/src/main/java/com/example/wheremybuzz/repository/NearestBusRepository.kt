@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.model.BusStopMeta
+import com.example.wheremybuzz.model.GeoLocation
 import com.example.wheremybuzz.model.InnerBusStopMeta
 import com.example.wheremybuzz.model.NearestBusStopsResponse
 import com.example.wheremybuzz.utils.helper.retrofit.GoogleRetrofitHelper
@@ -30,7 +31,7 @@ class NearestBusRepository {
 
 
     fun getNearestBusStops(
-        location: String,
+        location: GeoLocation,
         viewModelCallBack: (BusStopMeta) -> Unit
     ) {
         var innerBusStopMeta: InnerBusStopMeta?
@@ -38,7 +39,7 @@ class NearestBusRepository {
 
         val service = GoogleRetrofitHelper.nearestBusStopApiService
         val call = service.getNearestBusStops(
-            location,
+            location.retrieveStringLocation(),
             radius,
             type, googleApiKey
         )

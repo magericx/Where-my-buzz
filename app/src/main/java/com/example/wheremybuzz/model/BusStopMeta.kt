@@ -13,5 +13,9 @@ data class InnerBusStopMeta(
 
 data class GeoLocation(
     val latitude: Double,
-    val longitude: Double
-)
+    val longitude: Double){
+
+    fun retrieveStringLocation(): String {
+        return "$latitude, $longitude"
+    }
+}

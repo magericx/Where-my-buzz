@@ -29,7 +29,7 @@ class LocationServicesHelper(activity: Activity) {
     }
 
     private val locationServices by lazy {
-        return@lazy LocationServices.getFusedLocationProviderClient(mActivityRef?.get())
+        return@lazy LocationServices.getFusedLocationProviderClient(mActivityRef?.let{it.get()})
     }
 
     private fun setUpFragmentRef(tabFragment: TabFragment) {
@@ -93,7 +93,7 @@ class LocationServicesHelper(activity: Activity) {
     @RequiresApi(Build.VERSION_CODES.M)
     fun requestForLocationPermission(tabFragment: TabFragment) {
         setUpFragmentRef(tabFragment)
-        mFragmentRef!!.get()?.let { it1 ->
+        mFragmentRef?.get()?.let { it1 ->
             LocationPermissionHelper.requestLocationPermission(
                 it1
             )
