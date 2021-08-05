@@ -5,3 +5,8 @@ enum class StatusEnum{
     Success,
     UnknownError
 }
+
+enum class PermissionEnum{
+    Basic,
+    Advanced
+}

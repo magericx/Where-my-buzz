@@ -2,6 +2,7 @@ package com.example.wheremybuzz.utils.helper.permission
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.DownloadManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -9,22 +10,24 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import com.example.wheremybuzz.LocationConstants
 import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.model.PermissionEnum
 import com.example.wheremybuzz.ui.main.TabFragment
 import java.lang.ref.WeakReference
 
 object LocationPermissionHelper {
 
     const val TAG = "LocationHelper"
-    private const val MY_PERMISSIONS_REQUEST_LOCATION = LocationConstants.MY_PERMISSIONS_REQUEST_LOCATION
+    const val MY_PERMISSIONS_REQUEST_LOCATION =
+        LocationConstants.MY_PERMISSIONS_REQUEST_LOCATION
 
     private val mContext: Context = MyApplication.instance.applicationContext
 
     @SuppressLint("InlinedApi")
-    private val advancedLocationPermission: Array<String> = arrayOf(
+    val advancedLocationPermission: Array<String> = arrayOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_BACKGROUND_LOCATION
     )
-    private val basicLocationPermission: Array<String> =
+    val basicLocationPermission: Array<String> =
         arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
 
     fun checkLocationPermission(): Boolean {
@@ -43,18 +46,19 @@ object LocationPermissionHelper {
 
     //if checkLocation permission returns false, this method will be called
     @RequiresApi(Build.VERSION_CODES.M)
-    fun requestLocationPermission(tabFragment: TabFragment) {
-        val mFragmentRef: WeakReference<TabFragment> = WeakReference(tabFragment)
+    fun requestLocationPermission(requestPermissionCallback: RequestPermissionCallback) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            mFragmentRef.get()?.requestPermissions(
-                advancedLocationPermission,
-                MY_PERMISSIONS_REQUEST_LOCATION
-            )
+            requestPermissionCallback.updateOnResult(RequestStatus(PermissionEnum.Advanced))
         } else {
-            mFragmentRef.get()?.requestPermissions(
-                basicLocationPermission,
-                MY_PERMISSIONS_REQUEST_LOCATION
-            )
+            requestPermissionCallback.updateOnResult(RequestStatus(PermissionEnum.Basic))
         }
     }
 }
+
+interface RequestPermissionCallback {
+    fun updateOnResult(requestStatus: RequestStatus)
+}
+
+data class RequestStatus(
+    val permissionType: PermissionEnum
+)

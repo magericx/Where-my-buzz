@@ -11,11 +11,13 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ExpandableListAdapter
 import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -26,20 +28,19 @@ import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.GeoLocation
+import com.example.wheremybuzz.model.PermissionEnum
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.utils.helper.cache.CacheHelper
 import com.example.wheremybuzz.utils.helper.cache.CacheManager
 import com.example.wheremybuzz.utils.helper.network.NetworkUtil
-import com.example.wheremybuzz.utils.helper.permission.LocationCallback
-import com.example.wheremybuzz.utils.helper.permission.LocationServicesHelper
+import com.example.wheremybuzz.utils.helper.permission.*
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
-import com.example.wheremybuzz.view.Alert
-//import com.example.wheremybuzz.view.AlertDialogView
-import com.example.wheremybuzz.view.DialogCallback
+import com.example.wheremybuzz.view.AlertDialogView
+import com.example.wheremybuzz.view.DialogListener
 import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
@@ -115,6 +116,27 @@ class TabFragment : Fragment() {
         }
     }
 
+    private var requestPermissionCallback: RequestPermissionCallback =
+        object : RequestPermissionCallback {
+            override fun updateOnResult(requestStatus: RequestStatus) {
+                when (requestStatus.permissionType) {
+                    PermissionEnum.Basic ->
+                        requestPermissions(
+                            LocationPermissionHelper.basicLocationPermission,
+                            LocationPermissionHelper.MY_PERMISSIONS_REQUEST_LOCATION
+                        )
+                    PermissionEnum.Advanced ->
+                        requestPermissions(
+                            LocationPermissionHelper.advancedLocationPermission,
+                            LocationPermissionHelper.MY_PERMISSIONS_REQUEST_LOCATION
+                        )
+                    else -> {
+                        //do nothing here
+                    }
+                }
+            }
+        }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -145,7 +167,7 @@ class TabFragment : Fragment() {
             }
 
             //TODO change logic to pull lastLocation dynamically instead of using hardcoded location
-            locationServicesHelper.checkForLastLocation(this, locationCallback)
+            locationServicesHelper.checkForLastLocation(requestPermissionCallback, locationCallback)
         }
     }
 
@@ -260,7 +282,6 @@ class TabFragment : Fragment() {
     ) {
         Log.d(TAG, "Call bus Stop code list API ")
         // Update the list when the data changes
-        //viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
         val busStopCode =
             viewModel.getExpandableNearestListBusStopCode(expandableListTitle) ?: return
         viewModel.getBusScheduleListObservable(
@@ -410,27 +431,33 @@ class TabFragment : Fragment() {
                             )
                         } == PackageManager.PERMISSION_GRANTED
                     ) {
-                        locationServicesHelper.checkForLastLocation(this, locationCallback)
+                        locationServicesHelper.checkForLastLocation(
+                            requestPermissionCallback,
+                            locationCallback
+                        )
                     }
                 } else {
-                    if (numberOfTries <= 1) {
-                        //TODO shift dialog into a customisable dialog class and add callback
-                        val mAlert = Alert(this.requireContext())
-                        mAlert.setTitle("This is Error Warning")
-                        //mAlert.setIcon(android.R.drawable.ic_dialog_alert)
-                        //mAlert.setMessage("Do you want to delete?")
-                        mAlert.setPositveButton("Yes", View.OnClickListener {
-                            mAlert.dismiss()
-                        })
+                    val cancellable: Boolean = numberOfTries <= 1
+                    val dialog = AlertDialogView(this.requireContext()).buildDialog(
+                        cancellable,
+                        object : DialogListener {
+                            override fun onClick(status: StatusEnum) {
+                                locationServicesHelper.requestForLocationPermission(
+                                    requestPermissionCallback
+                                )
+                            }
 
-                        mAlert.setNegativeButton("No", View.OnClickListener {
-                            mAlert.dismiss()
-                        })
+                            override fun onCancel(status: StatusEnum) {
+                                numberOfTries += 1
+                                locationServicesHelper.requestForLocationPermission(
+                                    requestPermissionCallback
+                                )
+                            }
 
-                        mAlert.show()
-                        return
-                    }
-                    showErrorPage()
+                        })
+                    dialog.show()
+                    val button: Button = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                    button.isEnabled = cancellable
                 }
             }
         }

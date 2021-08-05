@@ -20,7 +20,6 @@ class LocationServicesHelper(activity: Activity) {
     }
 
     private var mActivityRef: WeakReference<Activity>? = null
-    private var mFragmentRef: WeakReference<TabFragment>? = null
     private var executorService2: ExecutorService? = null
 
     init {
@@ -29,21 +28,13 @@ class LocationServicesHelper(activity: Activity) {
     }
 
     private val locationServices by lazy {
-        return@lazy LocationServices.getFusedLocationProviderClient(mActivityRef?.let{it.get()})
+        return@lazy LocationServices.getFusedLocationProviderClient(mActivityRef?.let { it.get() })
     }
 
-    private fun setUpFragmentRef(tabFragment: TabFragment) {
-        mFragmentRef = if (mFragmentRef == null) {
-            WeakReference(tabFragment)
-        } else {
-            mFragmentRef?.clear()
-            WeakReference(tabFragment)
-        }
-    }
 
     @RequiresApi(Build.VERSION_CODES.M)
     fun checkForLastLocation(
-        tabFragment: TabFragment,
+        requestPermissionCallback: RequestPermissionCallback,
         locationCallback: LocationCallback
     ) {
         try {
@@ -60,10 +51,10 @@ class LocationServicesHelper(activity: Activity) {
                 )
                 if (!locationPermission) {
                     mActivityRef?.get()?.runOnUiThread {
-                        requestForLocationPermission(tabFragment)
+                        requestForLocationPermission(requestPermissionCallback)
                         return@runOnUiThread
                     }
-                } else{
+                } else {
                     mActivityRef?.get()?.runOnUiThread {
                         retrieveLastLocation(locationCallback)
                     }
@@ -91,21 +82,16 @@ class LocationServicesHelper(activity: Activity) {
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    fun requestForLocationPermission(tabFragment: TabFragment) {
-        setUpFragmentRef(tabFragment)
-        mFragmentRef?.get()?.let { it1 ->
-            LocationPermissionHelper.requestLocationPermission(
-                it1
-            )
-        }
+    fun requestForLocationPermission(requestPermissionCallback: RequestPermissionCallback) {
+        LocationPermissionHelper.requestLocationPermission(requestPermissionCallback)
     }
 
     fun destroyLocationServicesHelper() {
         mActivityRef?.clear()
-        mFragmentRef?.clear()
     }
 }
 
 interface LocationCallback {
     fun updateOnResult(location: Location?, statusEnum: StatusEnum)
 }
+
