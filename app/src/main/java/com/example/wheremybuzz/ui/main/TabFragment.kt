@@ -108,7 +108,7 @@ class TabFragment : Fragment() {
             } else {
                 showErrorPage()
                 Toast.makeText(
-                    activity!!.applicationContext, R.string.location_failed,
+                    activity?.applicationContext, R.string.location_failed,
                     Toast.LENGTH_SHORT
                 ).show()
                 disableShimmer()
@@ -140,7 +140,7 @@ class TabFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        position = arguments!!.getInt("pos")
+        arguments?.getInt("pos")?.let { position = it }
         enabledNetwork = NetworkUtil.haveNetworkConnection()
     }
 
@@ -148,14 +148,23 @@ class TabFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         this.sharedPreference = SharedPreferenceManager.getSharedPreferenceHelper
-        this.viewModel =
-            ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
-                NearestBusStopsViewModel::class.java
-            )
+        activity?.application?.let {
+            viewModel =
+                ViewModelProvider(requireActivity(), ViewModelFactory(it)).get(
+                    NearestBusStopsViewModel::class.java
+                )
+        }
+//        this.viewModel =
+//            ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
+//                NearestBusStopsViewModel::class.java
+//            )
         locationServicesHelper = LocationServicesHelper(this.activity as Activity)
         if (enabledNetwork) {
             // check if busStopCode is empty or missing, retrieve and save to cache
-            cacheHelper = CacheManager.initializeCacheHelper!!
+            CacheManager.initializeCacheHelper?.let {
+                cacheHelper = it
+            }
+            //cacheHelper = CacheManager.initializeCacheHelper
             if (forceUpdateCache || !cacheHelper.cacheExists() || timeUtil.checkTimeStampExceed3days(
                     sharedPreference.getTimeSharedPreference()
                 )
@@ -189,8 +198,15 @@ class TabFragment : Fragment() {
             expandableListView = parentView.findViewById(R.id.expandableListView)
             Log.d(TAG, "debug expendable $expandableListView")
         } else {
-            errorView = ErrorView(activity!!, container!!)
-            parentView = errorView!!.build()
+            errorView = activity?.let { fragmentActivity ->
+                container?.let {
+                    ErrorView(fragmentActivity, it)
+                }
+            }
+            //parentView = errorView!!.build()
+            errorView?.build()?.let {
+                parentView = it
+            }
         }
         Log.d(TAG, "Return view here $view")
         return parentView
@@ -203,7 +219,7 @@ class TabFragment : Fragment() {
             setListenersForOriginalView()
         } else {
             //callback from ErrorView listener
-            setListenersForErrorView(errorView!!)
+            errorView?.let { setListenersForErrorView(it) }
         }
     }
 
@@ -224,57 +240,67 @@ class TabFragment : Fragment() {
     }
 
     private fun showErrorPage() {
-        (view as ViewGroup).let {
+        (view as ViewGroup).let { viewgroup ->
             if (errorView == null) {
-                errorView = ErrorView(activity!!, it)
+                activity?.let { errorView = ErrorView(it, viewgroup) }
             }
-            it.removeAllViews()
-            it.addView(errorView!!.build())
-            setListenersForErrorView(errorView!!)
+            errorView?.let {
+                viewgroup.removeAllViews()
+                viewgroup.addView(it.build())
+                setListenersForErrorView(it)
+            }
         }
     }
 
     private fun setListenersForOriginalView() {
-        expandableListView!!.setOnGroupExpandListener { groupPosition ->
-            Toast.makeText(
-                activity!!.applicationContext,
-                (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
-                Toast.LENGTH_SHORT
-            ).show()
-            //don't allow refresh if cell is expanding
-            allowRefresh = false
-            viewModel.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
-            observeBusStopCodeModel(
-                (expandableListTitle as ArrayList<String>)[groupPosition]
+        expandableListView?.apply {
+            setOnGroupExpandListener { groupPosition ->
+                activity?.let {
+                    Toast.makeText(
+                        it.applicationContext,
+                        (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                //don't allow refresh if cell is expanding
+                allowRefresh = false
+                viewModel.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
+                observeBusStopCodeModel(
+                    (expandableListTitle as ArrayList<String>)[groupPosition]
+                )
+            }
+            setOnGroupCollapseListener { groupPosition ->
+                activity?.let {
+                    Toast.makeText(
+                        it.applicationContext,
+                        (expandableListTitle as ArrayList<String>)[groupPosition] + " List Collapsed.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            setOnChildClickListener { parent, v, groupPosition, childPosition, id ->
+                activity?.let {
+                    Toast.makeText(
+                        it.applicationContext,
+                        (expandableListTitle as ArrayList<String>)[groupPosition] + " -> "
+                                + viewModel.expandableNearestListDetail[(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                false
+            }
+        }
+        swipeContainer.apply {
+            setOnRefreshListener {
+                refreshExpandedList(true)
+            }
+            setColorSchemeResources(
+                android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light
             )
         }
-
-        expandableListView!!.setOnGroupCollapseListener { groupPosition ->
-            Toast.makeText(
-                activity!!.applicationContext,
-                (expandableListTitle as ArrayList<String>)[groupPosition] + " List Collapsed.",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        expandableListView!!.setOnChildClickListener { parent, v, groupPosition, childPosition, id ->
-            Toast.makeText(
-                activity!!.applicationContext,
-                (expandableListTitle as ArrayList<String>)[groupPosition] + " -> "
-                        + viewModel.expandableNearestListDetail[(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
-                Toast.LENGTH_SHORT
-            ).show()
-            false
-        }
-        swipeContainer.setOnRefreshListener {
-            refreshExpandedList(true)
-        }
-        swipeContainer.setColorSchemeResources(
-            android.R.color.holo_blue_bright,
-            android.R.color.holo_green_light,
-            android.R.color.holo_orange_light,
-            android.R.color.holo_red_light
-        )
     }
 
     private fun observeBusStopCodeModel(
@@ -298,7 +324,7 @@ class TabFragment : Fragment() {
         viewModel.setUpExpandableListAdapter(0)
         expandableListAdapter = viewModel.getExpandableNearestListAdapter()
         expandableListTitle = viewModel.getNearestExpandableListTitle()
-        expandableListView!!.setAdapter(expandableListAdapter)
+        expandableListView?.setAdapter(expandableListAdapter)
     }
 
     //TODO change to accept location as argument
@@ -309,10 +335,12 @@ class TabFragment : Fragment() {
             ?.observe(viewLifecycleOwner,
                 Observer<StatusEnum> { status ->
                     if (status != null) {
-                        Toast.makeText(
-                            activity!!.applicationContext, "Update headers on page",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        activity?.let {
+                            Toast.makeText(
+                                it.applicationContext, "Update headers on page",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                         if (status == StatusEnum.Success) {
                             createNearestExpandableListAdapter()
                         } else {
