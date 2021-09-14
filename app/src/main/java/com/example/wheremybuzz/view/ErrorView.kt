@@ -10,7 +10,7 @@ import com.example.wheremybuzz.R
 import com.google.android.material.button.MaterialButton
 import java.lang.ref.WeakReference
 
-class ErrorView(activity: FragmentActivity, view: ViewGroup){
+class ErrorView(view: ViewGroup){
 
     //var mActivity: WeakReference<FragmentActivity>? = null
     var mContext:Context = MyApplication.instance.applicationContext

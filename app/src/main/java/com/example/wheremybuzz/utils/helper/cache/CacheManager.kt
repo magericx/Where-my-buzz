@@ -10,7 +10,6 @@ object CacheManager {
     private var context: Context = MyApplication.instance.applicationContext
     private const val TAG = "CacheWriter"
     private lateinit var cacheHelper: CacheHelper
-    //private var cacheHelper: CacheHelper? = null
     private const val fileName: String = "busStopCode.cache"
 
     val initializeCacheHelper: CacheHelper? by lazy {

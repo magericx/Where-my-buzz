@@ -14,6 +14,7 @@ import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.repository.BusScheduleRepository
 import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
+import enum.FragmentType
 import java.util.*
 import java.util.concurrent.ExecutorService
 
@@ -31,13 +32,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     var executorService2: ExecutorService
 
     var expandableNearestListDetail: HashMap<String, MutableList<StoredBusMeta>>
-        get() {
-            return field
-        }
     var expandableFavouriteListDetail: HashMap<String, MutableList<StoredBusMeta>>
-        get() {
-            return field
-        }
     private lateinit var expandableNearestListAdapter: ExpandableListAdapter
     private lateinit var expandableFavouriteListAdapter: ExpandableListAdapter
     private lateinit var expandableNearestListTitle: List<String>
@@ -115,11 +110,11 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     private fun setServicesInExpendableListDetail(
         key: String,
         serviceList: List<Service>,
-        flag: Int
+        fragmentType: FragmentType
     ) {
         //Log.d(TAG, "expandableListDetails is $expandableListDetail")
         val expandableListDetail: HashMap<String, MutableList<StoredBusMeta>> =
-            if (flag == 0) expandableNearestListDetail else expandableFavouriteListDetail
+            if (fragmentType == FragmentType.NEAREST) expandableNearestListDetail else expandableFavouriteListDetail
         if (expandableListDetail.containsKey(key)) {
             val currentExpandableHashMap = expandableListDetail[key]
             val oldBusStopCode = currentExpandableHashMap?.get(0)?.BusStopCode
@@ -142,9 +137,9 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     }
 
     //flag = integer, 0 = nearest, 1 = favourite
-    fun setUpExpandableListAdapter(flag: Int) {
-        when (flag) {
-            0 -> {
+    fun setUpExpandableListAdapter(fragmentType: FragmentType) {
+        when (fragmentType) {
+            FragmentType.NEAREST -> {
                 setupNearestExpandableListTitle()
                 expandableNearestListAdapter = CustomExpandableListAdapter(
                     applicationContext,
@@ -152,7 +147,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                     expandableNearestListDetail
                 )
             }
-            1 -> {
+            FragmentType.FAVOURITE -> {
                 setupFavouriteExpandableListTitle()
                 expandableFavouriteListAdapter = CustomExpandableListAdapter(
                     applicationContext,
@@ -234,28 +229,6 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         return nearestBusStopsGeoListObservable
     }
 
-    fun getBusStopCodeListObservable(
-        busStopName: String,
-        latitude: Double,
-        longtitude: Double
-    ) {
-        executorService2.submit {
-            Log.d(TAG, "Retrieve cache here")
-            busStopCodeRepository!!.getBusStopCodeFromCache(
-                busStopCodeTempCache,
-                busStopName,
-                latitude,
-                longtitude
-            ) {
-                setBusStopCodeInExpendableListDetail(
-                    busStopName,
-                    it.busStopCode
-                )
-                getBusScheduleListObservable(it.busStopCode.toLong(), busStopName, 0)
-            }
-        }
-    }
-
     //if API call is success, update temp cache
     fun retrieveBusStopCodesAndSaveCache() {
         executorService2.submit {
@@ -270,7 +243,7 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
     fun getBusScheduleListObservable(
         busStopCode: Long,
         busStopName: String,
-        flag: Int
+        fragmentType: FragmentType
     ) {
         executorService2.submit {
             busScheduleRepository!!.getBusScheduleMetaList(busStopCode, object :
@@ -281,9 +254,9 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
                         setServicesInExpendableListDetail(
                             busStopName,
                             busScheduleMeta.Services,
-                            flag
+                            fragmentType
                         )
-                        if (flag == 0) updateNearestExpandableListAdapter() else updateFavouriteExpandableListAdapter()
+                        if (fragmentType == FragmentType.NEAREST) updateNearestExpandableListAdapter() else updateFavouriteExpandableListAdapter()
                     }
                 }
             })
@@ -292,25 +265,44 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
 
     fun refreshExpandedBusStops(
         busStopList: HashMap<String, String>,
-        callback: StatusCallBack
+        callback: StatusCallBack,
+        fragmentType: FragmentType
     ) {
         executorService.submit {
             Log.d(TAG, "Current thread executing is ${Thread.currentThread().name}")
             //callback method
+            val details: HashMap<String, MutableList<StoredBusMeta>> =
+                if (fragmentType == FragmentType.NEAREST) {
+                    expandableNearestListDetail
+                } else {
+                    expandableFavouriteListDetail
+                }
+
             busScheduleRepository?.getBusScheduleMetaRefreshList(busStopList) { it ->
                 if (it.servicesList.isNotEmpty()) {
                     Log.d(TAG, "ServiceList size is ${it.servicesList.size}")
                     //update actual data holder
                     Log.d(TAG, "Retrieved key is ${it.servicesList[0].first}")
-                    Log.d(TAG, "Full set of keys are ${expandableNearestListDetail.keys}")
+                    Log.d(TAG, "Full set of keys are ${details.keys}")
                     for (i in it.servicesList) {
-                        if (expandableNearestListDetail.containsKey(i.first)) {
+                        if (details.containsKey(i.first)) {
                             Log.d(TAG, "Found key")
-                            setServicesInExpendableListDetail(i.first, i.second.Services, 0)
+                            setServicesInExpendableListDetail(
+                                i.first,
+                                i.second.Services,
+                                fragmentType
+                            )
                         }
                     }
                     Log.d(TAG, "PostValue observer here")
-                    updateNearestExpandableListAdapter()
+                    when (fragmentType) {
+                        FragmentType.NEAREST -> updateNearestExpandableListAdapter()
+                        FragmentType.FAVOURITE -> updateFavouriteExpandableListAdapter()
+                        else -> {
+                            //do nothing
+                        }
+
+                    }
                     callback.updateOnResult(true)
                 } else {
                     Log.d(TAG, "Trigger callback here")

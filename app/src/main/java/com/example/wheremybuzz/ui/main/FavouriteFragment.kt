@@ -16,14 +16,17 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.StatusEnum
+import com.example.wheremybuzz.model.StoredBusMeta
+import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.utils.helper.network.NetworkUtil
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
+import enum.FragmentType
 
-class SecondFragment : Fragment() {
+class FavouriteFragment : Fragment() {
 
     companion object {
         const val TAG = "SecondFragment"
@@ -31,7 +34,7 @@ class SecondFragment : Fragment() {
             Log.d(TAG, "Loaded second fragment here")
             val bundle = Bundle()
             bundle.putInt("pos", position)
-            val tabFragment = SecondFragment()
+            val tabFragment = FavouriteFragment()
             tabFragment.arguments = bundle
             return tabFragment
         }
@@ -40,9 +43,9 @@ class SecondFragment : Fragment() {
     private var enabledNetwork: Boolean = false
     lateinit var sharedPreference: SharedPreferenceHelper
     private lateinit var viewModel: NearestBusStopsViewModel
-    lateinit var swipeContainer: SwipeRefreshLayout
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     private lateinit var expandableListView: ExpandableListView
+    private lateinit var swipeContainer: SwipeRefreshLayout
     lateinit var expandableListTitle: List<String>
     lateinit var expandableListAdapter: ExpandableListAdapter
     private var errorView: ErrorView? = null
@@ -76,12 +79,12 @@ class SecondFragment : Fragment() {
         if (enabledNetwork) {
             view = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
-            swipeContainer = view.findViewById(R.id.swipeContainer)!!
+            swipeContainer = view.findViewById(R.id.swipeContainer)
             enableShimmer()
             expandableListView = view.findViewById(R.id.expandableListView)
             Log.d(TAG, "debug expendable $expandableListView")
         } else {
-            errorView = ErrorView(activity!!, container!!)
+            errorView = ErrorView(container!!)
             view = errorView!!.build()
         }
         return view as View
@@ -97,7 +100,6 @@ class SecondFragment : Fragment() {
     }
 
     private fun setListenersForErrorView(errorView: ErrorView) {
-        //casting is very expensive, do it once here
         errorView.let {
             it.setupErrorListeners {
                 (view as ViewGroup).let {
@@ -115,12 +117,65 @@ class SecondFragment : Fragment() {
     private fun showErrorPage() {
         (view as ViewGroup).let {
             if (errorView == null) {
-                errorView = ErrorView(activity!!, it)
+                errorView = ErrorView(it)
             }
             it.removeAllViews()
             it.addView(errorView!!.build())
             setListenersForErrorView(errorView!!)
         }
+    }
+
+    private fun setListeners() {
+        swipeContainer.setOnRefreshListener { refreshExpandedList(swipeRefresh = true) }
+    }
+
+    private fun refreshExpandedList(swipeRefresh: Boolean) {
+        val list: HashMap<String, String>? = getCurrentExpandedList()
+        if (!list.isNullOrEmpty()) {
+            Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
+            viewModel.refreshExpandedBusStops(list, object : StatusCallBack {
+                override fun updateOnResult(status: Boolean) {
+                    if (status) {
+                        if (!swipeRefresh) {
+                            allowRefresh = true
+                        } else {
+                            swipeContainer.isRefreshing = false
+                        }
+                    } else {
+                        //check if nothing retrieved due to network, show error placeholder page
+                        showErrorPage()
+                    }
+                }
+            }, FragmentType.FAVOURITE)
+        } else {
+            if (swipeRefresh) {
+                swipeContainer.isRefreshing = false
+            }
+        }
+    }
+
+    //method that will check for the expanded items and add into hashmap <busStopCode,busStopName>
+    private fun getCurrentExpandedList(): HashMap<String, String>? {
+        val groupCount = expandableListAdapter.groupCount
+        Log.d(TAG, "total number of group count $groupCount")
+        val visibleExpandedList: HashMap<String, String> = hashMapOf()
+        for (i in 0 until groupCount) {
+            val expanded = expandableListView.isGroupExpanded(i) ?: false
+            Log.d(TAG, "group position number $i is $expanded")
+            if (expanded) {
+                val busStopCode = (expandableListAdapter.getChild(
+                    i, 1
+                ) as StoredBusMeta).BusStopCode
+                val busStopName = (expandableListAdapter.getGroup(
+                    i
+                )
+                        ).toString()
+                if (busStopCode.isNotEmpty() && busStopName.isNotEmpty()) {
+                    visibleExpandedList[busStopCode] = busStopName
+                }
+            }
+        }
+        return visibleExpandedList
     }
 
     private fun enableShimmer() {
@@ -175,19 +230,18 @@ class SecondFragment : Fragment() {
 //            android.R.color.holo_orange_light,
 //            android.R.color.holo_red_light
 //        )
+        setListeners()
     }
 
     private fun observeBusStopCodeModel(
         expandableListTitle: String
     ) {
         Log.d(TAG, "Call bus Stop code list API ")
-        // Update the list when the data changes
-        //viewModel?.getBusStopCodeListObservable(expandableListTitle, latitude, longtitude)
         val busStopCode =
             viewModel.getExpandableFavouriteListBusStopCode(expandableListTitle) ?: return
         viewModel.getBusScheduleListObservable(
             busStopCode.busStopCode.toLong(),
-            expandableListTitle, 1
+            expandableListTitle, FragmentType.FAVOURITE
         )
         allowRefresh = true
 
@@ -217,14 +271,10 @@ class SecondFragment : Fragment() {
 
     //adapter for 2nd screen
     private fun createFavouriteExpandableListAdapter() {
-        viewModel.setUpExpandableListAdapter(1)
+        viewModel.setUpExpandableListAdapter(FragmentType.FAVOURITE)
         expandableListAdapter = viewModel.getexpandableFavouriteListAdapter()
         expandableListTitle = viewModel.getFavouriteExpandableListTitle()
         expandableListView.setAdapter(expandableListAdapter)
-    }
-
-    override fun onResume() {
-        super.onResume()
     }
 
     override fun onPause() {

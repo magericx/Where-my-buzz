@@ -13,7 +13,7 @@ internal class ViewPagerAdapter(manager: FragmentManager?) :
     override fun getItem(position: Int): Fragment {
         return when (position) {
             0 -> TabFragment.getInstance(position)
-            1 -> SecondFragment.getInstance(position)
+            1 -> FavouriteFragment.getInstance(position)
             else -> {
                 TabFragment.getInstance(position)
             }

@@ -44,6 +44,7 @@ import com.example.wheremybuzz.view.DialogListener
 import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
+import enum.FragmentType
 
 
 class TabFragment : Fragment() {
@@ -83,7 +84,6 @@ class TabFragment : Fragment() {
     private var errorView: ErrorView? = null
     var numberOfTries = 0
 
-    //private var nearestBusView: NearestBusView? = null
     private lateinit var locationServicesHelper: LocationServicesHelper
 
     private var locationCallback: LocationCallback = object : LocationCallback {
@@ -154,17 +154,12 @@ class TabFragment : Fragment() {
                     NearestBusStopsViewModel::class.java
                 )
         }
-//        this.viewModel =
-//            ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
-//                NearestBusStopsViewModel::class.java
-//            )
         locationServicesHelper = LocationServicesHelper(this.activity as Activity)
         if (enabledNetwork) {
             // check if busStopCode is empty or missing, retrieve and save to cache
             CacheManager.initializeCacheHelper?.let {
                 cacheHelper = it
             }
-            //cacheHelper = CacheManager.initializeCacheHelper
             if (forceUpdateCache || !cacheHelper.cacheExists() || timeUtil.checkTimeStampExceed3days(
                     sharedPreference.getTimeSharedPreference()
                 )
@@ -175,7 +170,6 @@ class TabFragment : Fragment() {
                 sharedPreference.setTimeSharedPreference()
             }
 
-            //TODO change logic to pull lastLocation dynamically instead of using hardcoded location
             locationServicesHelper.checkForLastLocation(requestPermissionCallback, locationCallback)
         }
     }
@@ -189,21 +183,18 @@ class TabFragment : Fragment() {
         Log.d(TAG, "Invoke onCreateView here")
         Log.d(TAG, "enabledNetwork in onCreateView is $enabledNetwork")
         if (enabledNetwork) {
-//            nearestBusView = NearestBusView(activity!!,container!!)
-//            parentView = nearestBusView!!.build()
             parentView = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = parentView.findViewById(R.id.shimmer_view_container)
-            swipeContainer = parentView.findViewById(R.id.swipeContainer)!!
+            swipeContainer = parentView.findViewById(R.id.swipeContainer)
             enableShimmer()
             expandableListView = parentView.findViewById(R.id.expandableListView)
             Log.d(TAG, "debug expendable $expandableListView")
         } else {
             errorView = activity?.let { fragmentActivity ->
                 container?.let {
-                    ErrorView(fragmentActivity, it)
+                    ErrorView(it)
                 }
             }
-            //parentView = errorView!!.build()
             errorView?.build()?.let {
                 parentView = it
             }
@@ -242,7 +233,7 @@ class TabFragment : Fragment() {
     private fun showErrorPage() {
         (view as ViewGroup).let { viewgroup ->
             if (errorView == null) {
-                activity?.let { errorView = ErrorView(it, viewgroup) }
+                activity?.let { errorView = ErrorView(viewgroup) }
             }
             errorView?.let {
                 viewgroup.removeAllViews()
@@ -292,6 +283,7 @@ class TabFragment : Fragment() {
         }
         swipeContainer.apply {
             setOnRefreshListener {
+                Log.d(TAG,"Refresh here")
                 refreshExpandedList(true)
             }
             setColorSchemeResources(
@@ -313,7 +305,7 @@ class TabFragment : Fragment() {
         viewModel.getBusScheduleListObservable(
             busStopCode.busStopCode.toLong(),
             expandableListTitle,
-            0
+            FragmentType.NEAREST
         )
         allowRefresh = true
 
@@ -321,7 +313,7 @@ class TabFragment : Fragment() {
 
     //adapter for 1st screen
     private fun createNearestExpandableListAdapter() {
-        viewModel.setUpExpandableListAdapter(0)
+        viewModel.setUpExpandableListAdapter(FragmentType.NEAREST)
         expandableListAdapter = viewModel.getExpandableNearestListAdapter()
         expandableListTitle = viewModel.getNearestExpandableListTitle()
         expandableListView?.setAdapter(expandableListAdapter)
@@ -380,7 +372,7 @@ class TabFragment : Fragment() {
                         showErrorPage()
                     }
                 }
-            })
+            }, FragmentType.NEAREST)
         } else {
             if (swipeRefresh) {
                 swipeContainer.isRefreshing = false
@@ -409,9 +401,6 @@ class TabFragment : Fragment() {
                     visibleExpandedList[busStopCode] = busStopName
                 }
             }
-        }
-        if (visibleExpandedList.size == 0) {
-            return null
         }
         return visibleExpandedList
     }
