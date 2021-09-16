@@ -34,6 +34,7 @@ import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.utils.helper.cache.CacheHelper
 import com.example.wheremybuzz.utils.helper.cache.CacheManager
+import com.example.wheremybuzz.utils.helper.intent.IntentHelper
 import com.example.wheremybuzz.utils.helper.network.NetworkUtil
 import com.example.wheremybuzz.utils.helper.permission.*
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
@@ -88,30 +89,36 @@ class TabFragment : Fragment() {
 
     private var locationCallback: LocationCallback = object : LocationCallback {
         override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
-            if (statusEnum == StatusEnum.Success) {
-                var tempLatitude = 0.0
-                var tempLongitude = 0.0
-                location.let {
-                    it?.latitude?.let { latitude ->
-                        tempLatitude = latitude
+            when (statusEnum) {
+                StatusEnum.Success -> {
+                    var tempLatitude = 0.0
+                    var tempLongitude = 0.0
+                    location.let {
+                        it?.latitude?.let { latitude ->
+                            tempLatitude = latitude
+                        }
+                        it?.longitude?.let { longitude ->
+                            tempLongitude = longitude
+                        }
                     }
-                    it?.longitude?.let { longitude ->
-                        tempLongitude = longitude
-                    }
-                }
-                observeNearestBusStopsModel(
-                    GeoLocation(
-                        latitude = tempLatitude,
-                        longitude = tempLongitude
+                    observeNearestBusStopsModel(
+                        GeoLocation(
+                            latitude = tempLatitude,
+                            longitude = tempLongitude
+                        )
                     )
-                )
-            } else {
-                showErrorPage()
-                Toast.makeText(
-                    activity?.applicationContext, R.string.location_failed,
-                    Toast.LENGTH_SHORT
-                ).show()
-                disableShimmer()
+                }
+                StatusEnum.NoPermission -> {
+                    startActivity(IntentHelper.locationPermissionSettings())
+                }
+                else -> {
+                    showErrorPage()
+                    Toast.makeText(
+                        activity?.applicationContext, R.string.location_failed,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    disableShimmer()
+                }
             }
         }
     }
@@ -283,7 +290,7 @@ class TabFragment : Fragment() {
         }
         swipeContainer.apply {
             setOnRefreshListener {
-                Log.d(TAG,"Refresh here")
+                Log.d(TAG, "Refresh here")
                 refreshExpandedList(true)
             }
             setColorSchemeResources(

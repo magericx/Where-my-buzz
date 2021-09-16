@@ -15,7 +15,6 @@ class MyApplication : Application(), Application.ActivityLifecycleCallbacks {
     override fun onCreate() {
         super.onCreate()
         registerActivityLifecycleCallbacks(this)
-        Log.d(TAG, "Created instance of MyApplication here")
         instance = this
         poolThread = Executors.newFixedThreadPool(4)
         poolThread2 = Executors.newFixedThreadPool(6)

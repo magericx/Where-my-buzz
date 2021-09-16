@@ -34,6 +34,7 @@ class NearestBusRepository {
         location: GeoLocation,
         viewModelCallBack: (BusStopMeta) -> Unit
     ) {
+        Log.d(TAG,"Passed in geoLocation is $location")
         var innerBusStopMeta: InnerBusStopMeta?
         val busStopMetaList: MutableList<InnerBusStopMeta?>? = mutableListOf()
 
