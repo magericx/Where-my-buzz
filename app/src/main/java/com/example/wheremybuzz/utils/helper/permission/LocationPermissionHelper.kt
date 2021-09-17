@@ -27,18 +27,14 @@ object LocationPermissionHelper {
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_BACKGROUND_LOCATION
     )
-    val basicLocationPermission: Array<String> =
+    private val basicLocationPermission: Array<String> =
         arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
 
     fun checkLocationPermission(): Boolean {
         if (ActivityCompat.checkSelfPermission(
                 mContext,
                 Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                mContext,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+            ) != PackageManager.PERMISSION_GRANTED) {
             return false
         }
         return true
@@ -46,11 +42,11 @@ object LocationPermissionHelper {
 
     //if checkLocation permission returns false, this method will be called
     @RequiresApi(Build.VERSION_CODES.M)
-    fun requestLocationPermission(requestPermissionCallback: RequestPermissionCallback) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            requestPermissionCallback.updateOnResult(RequestStatus(PermissionEnum.Advanced))
+    fun requestLocationPermission(): Array<String> {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            advancedLocationPermission
         } else {
-            requestPermissionCallback.updateOnResult(RequestStatus(PermissionEnum.Basic))
+            basicLocationPermission
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.wheremybuzz.ui.main
 
 import android.Manifest
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
@@ -15,6 +16,7 @@ import android.widget.Button
 import android.widget.ExpandableListAdapter
 import android.widget.ExpandableListView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.Nullable
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
@@ -28,7 +30,6 @@ import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.GeoLocation
-import com.example.wheremybuzz.model.PermissionEnum
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.model.callback.StatusCallBack
@@ -84,8 +85,28 @@ class TabFragment : Fragment() {
     lateinit var parentView: View
     private var errorView: ErrorView? = null
     var numberOfTries = 0
+    private var navigateToAppSettings: Boolean = false
 
     private lateinit var locationServicesHelper: LocationServicesHelper
+
+    private val requestMultiplePermissions =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            permissions.entries.forEach {
+                Log.d(TAG, "Permission here ${it.key} = ${it.value}")
+            }
+            if (permissions[ACCESS_FINE_LOCATION] != null && permissions[ACCESS_FINE_LOCATION] == false) {
+                Toast.makeText(
+                    mContext,
+                    "Permission not granted",
+                    Toast.LENGTH_SHORT
+                ).show()
+                showPermissionDialog()
+                return@registerForActivityResult
+            }
+            locationServicesHelper.retrieveLastLocation(locationCallback)
+        }
 
     private var locationCallback: LocationCallback = object : LocationCallback {
         override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
@@ -109,7 +130,7 @@ class TabFragment : Fragment() {
                     )
                 }
                 StatusEnum.NoPermission -> {
-                    startActivity(IntentHelper.locationPermissionSettings())
+                    startActivity(IntentHelper.locationServicesPermissionSettings())
                 }
                 else -> {
                     showErrorPage()
@@ -123,26 +144,12 @@ class TabFragment : Fragment() {
         }
     }
 
-    private var requestPermissionCallback: RequestPermissionCallback =
-        object : RequestPermissionCallback {
-            override fun updateOnResult(requestStatus: RequestStatus) {
-                when (requestStatus.permissionType) {
-                    PermissionEnum.Basic ->
-                        requestPermissions(
-                            LocationPermissionHelper.basicLocationPermission,
-                            LocationPermissionHelper.MY_PERMISSIONS_REQUEST_LOCATION
-                        )
-                    PermissionEnum.Advanced ->
-                        requestPermissions(
-                            LocationPermissionHelper.advancedLocationPermission,
-                            LocationPermissionHelper.MY_PERMISSIONS_REQUEST_LOCATION
-                        )
-                    else -> {
-                        //do nothing here
-                    }
-                }
-            }
+
+    private fun handlePermissionResponse(permissionArray: Array<String>?) {
+        permissionArray.let {
+            requestMultiplePermissions.launch(permissionArray)
         }
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -177,7 +184,7 @@ class TabFragment : Fragment() {
                 sharedPreference.setTimeSharedPreference()
             }
 
-            locationServicesHelper.checkForLastLocation(requestPermissionCallback, locationCallback)
+            handlePermissionResponse(locationServicesHelper.checkForLastLocation(locationCallback))
         }
     }
 
@@ -326,7 +333,6 @@ class TabFragment : Fragment() {
         expandableListView?.setAdapter(expandableListAdapter)
     }
 
-    //TODO change to accept location as argument
     private fun observeNearestBusStopsModel(location: GeoLocation) {
         Log.d(TAG, "Call nearest bus stop API ")
         // Update the list when the data changes
@@ -414,9 +420,12 @@ class TabFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        Log.d(TAG, "Resume app here")
+        if (viewModel.getNearestExpandableListSize() == 0 && navigateToAppSettings){
+            handlePermissionResponse(locationServicesHelper.checkForLastLocation(locationCallback))
+        }
         if (allowRefresh) {
             allowRefresh = false
-            Log.d(TAG, "On resume app here")
             refreshExpandedList(false)
         }
     }
@@ -455,35 +464,41 @@ class TabFragment : Fragment() {
                             )
                         } == PackageManager.PERMISSION_GRANTED
                     ) {
-                        locationServicesHelper.checkForLastLocation(
-                            requestPermissionCallback,
-                            locationCallback
+                        Log.d(TAG, "Check for permission here")
+                        handlePermissionResponse(
+                            locationServicesHelper.checkForLastLocation(
+                                locationCallback
+                            )
                         )
                     }
                 } else {
-                    val cancellable: Boolean = numberOfTries <= 1
-                    val dialog = AlertDialogView(this.requireContext()).buildDialog(
-                        cancellable,
-                        object : DialogListener {
-                            override fun onClick(status: StatusEnum) {
-                                locationServicesHelper.requestForLocationPermission(
-                                    requestPermissionCallback
-                                )
-                            }
-
-                            override fun onCancel(status: StatusEnum) {
-                                numberOfTries += 1
-                                locationServicesHelper.requestForLocationPermission(
-                                    requestPermissionCallback
-                                )
-                            }
-
-                        })
-                    dialog.show()
-                    val button: Button = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-                    button.isEnabled = cancellable
+                    showPermissionDialog()
                 }
             }
         }
+    }
+
+    private fun showPermissionDialog() {
+        val cancellable: Boolean = numberOfTries <= 1
+        val dialog = AlertDialogView(this.requireContext()).buildDialog(
+            cancellable,
+            object : DialogListener {
+                override fun onClick(status: StatusEnum) {
+                    navigateToAppSettings = true
+                    startActivity(IntentHelper.locationAppPermissionSettings())
+                }
+
+                override fun onCancel(status: StatusEnum) {
+                    numberOfTries += 1
+                    handlePermissionResponse(
+                        locationServicesHelper.requestForLocationPermission(
+                        )
+                    )
+                }
+
+            })
+        dialog.show()
+        val button: Button = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+        button.isEnabled = cancellable
     }
 }

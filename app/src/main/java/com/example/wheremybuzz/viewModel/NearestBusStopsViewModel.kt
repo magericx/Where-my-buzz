@@ -158,6 +158,10 @@ class NearestBusStopsViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+    fun getNearestExpandableListSize(): Int {
+        return expandableNearestListDetail.size
+    }
+
     fun getNearestExpandableListTitle(): List<String> {
         return expandableNearestListTitle
     }

@@ -32,35 +32,28 @@ class LocationServicesHelper(activity: Activity) {
     }
 
     private val locationServices by lazy {
-        return@lazy LocationServices.getFusedLocationProviderClient(mActivityRef?.let { it.get() })
+        return@lazy LocationServices.getFusedLocationProviderClient(mActivityRef!!.get()!!)
     }
 
 
     @RequiresApi(Build.VERSION_CODES.M)
     fun checkForLastLocation(
-        requestPermissionCallback: RequestPermissionCallback,
         locationCallback: LocationCallback
-    ) {
+    ): Array<String>? {
         try {
-            var locationPermission: Boolean
-            executorService2?.submit {
-                locationPermission = LocationPermissionHelper.checkLocationPermission()
-                if (!locationPermission) {
-                    mActivityRef?.get()?.runOnUiThread {
-                        requestForLocationPermission(requestPermissionCallback)
-                        return@runOnUiThread
-                    }
-                } else {
-                    mActivityRef?.get()?.runOnUiThread {
-                        retrieveLastLocation(locationCallback)
-                    }
-                }
-
+            val locationPermission: Boolean = LocationPermissionHelper.checkLocationPermission()
+            if (!locationPermission) {
+                Log.d(TAG, "requestForLocation Permission here")
+                return requestForLocationPermission()
+            } else {
+                Log.d(TAG, "requestForLastLocation Permission here")
+                retrieveLastLocation(locationCallback)
             }
         } catch (e: Exception) {
             Log.d(TAG, "Encountered exception due to $e")
             locationCallback.updateOnResult(null, StatusEnum.UnknownError)
         }
+        return null
     }
 
     @SuppressLint("MissingPermission")
@@ -87,8 +80,8 @@ class LocationServicesHelper(activity: Activity) {
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    fun requestForLocationPermission(requestPermissionCallback: RequestPermissionCallback) {
-        LocationPermissionHelper.requestLocationPermission(requestPermissionCallback)
+    fun requestForLocationPermission(): Array<String> {
+        return LocationPermissionHelper.requestLocationPermission()
     }
 
     fun destroyLocationServicesHelper() {
