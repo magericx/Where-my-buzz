@@ -22,7 +22,7 @@ import com.example.wheremybuzz.utils.helper.network.NetworkUtil
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import com.example.wheremybuzz.view.ErrorView
-import com.example.wheremybuzz.viewModel.NearestBusStopsViewModel
+import com.example.wheremybuzz.viewModel.BusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import enum.FragmentType
 
@@ -42,7 +42,7 @@ class FavouriteFragment : Fragment() {
 
     private var enabledNetwork: Boolean = false
     lateinit var sharedPreference: SharedPreferenceHelper
-    private lateinit var viewModel: NearestBusStopsViewModel
+    private lateinit var viewModel: BusStopsViewModel
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     private lateinit var expandableListView: ExpandableListView
     private lateinit var swipeContainer: SwipeRefreshLayout
@@ -62,7 +62,7 @@ class FavouriteFragment : Fragment() {
         sharedPreference = SharedPreferenceManager.getFavouriteSharedPreferenceHelper
         viewModel =
             ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
-                NearestBusStopsViewModel::class.java
+                BusStopsViewModel::class.java
             )
         if (enabledNetwork) {
             observeFavouriteBusStopsModel()

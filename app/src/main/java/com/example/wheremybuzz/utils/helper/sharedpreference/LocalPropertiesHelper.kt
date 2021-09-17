@@ -12,7 +12,7 @@ object LocalPropertiesHelper {
         .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
 
     val packageName: String by lazy {
-        ai.metaData["com.lta.android.package.name"] as String
+        return@lazy ai.metaData["com.lta.android.package.name"] as String
     }
 
 }

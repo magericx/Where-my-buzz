@@ -19,7 +19,7 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 
 
-class NearestBusStopsViewModel(application: Application) : AndroidViewModel(application) {
+class BusStopsViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         private val TAG = "NearestBusStopsView"
