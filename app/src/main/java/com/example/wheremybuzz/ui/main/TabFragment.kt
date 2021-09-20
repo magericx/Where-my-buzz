@@ -1,10 +1,8 @@
 package com.example.wheremybuzz.ui.main
 
-import android.Manifest
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.app.Activity
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
@@ -20,7 +18,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.Nullable
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -65,8 +62,6 @@ class TabFragment : Fragment() {
         private val timeUtil: TimeUtil =
             TimeUtil
         private const val forceUpdateCache = false
-        private const val MY_PERMISSIONS_REQUEST_LOCATION =
-            LocationConstants.MY_PERMISSIONS_REQUEST_LOCATION
     }
 
     private val mContext: Context = MyApplication.instance.applicationContext
@@ -85,7 +80,6 @@ class TabFragment : Fragment() {
     lateinit var parentView: View
     private var errorView: ErrorView? = null
     var numberOfTries = 0
-    private var navigateToAppSettings: Boolean = false
     private var isPermissionDialogActive: Boolean = false
 
     private lateinit var locationServicesHelper: LocationServicesHelper
@@ -143,6 +137,22 @@ class TabFragment : Fragment() {
                     disableShimmer()
                 }
             }
+        }
+    }
+
+    private var dialogCallback: DialogListener = object : DialogListener {
+        override fun onClick(status: StatusEnum) {
+            startActivity(IntentHelper.locationAppPermissionSettings())
+            isPermissionDialogActive = false
+        }
+
+        override fun onCancel(status: StatusEnum) {
+            numberOfTries += 1
+            handlePermissionResponse(
+                locationServicesHelper.requestForLocationPermission(
+                )
+            )
+            isPermissionDialogActive = false
         }
     }
 
@@ -415,9 +425,15 @@ class TabFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "Resume app here")
-        if (viewModel.getNearestExpandableListSize() == 0 && navigateToAppSettings) {
-            navigateToAppSettings = false
-            handlePermissionResponse(locationServicesHelper.checkForLastLocation(locationCallback))
+        IntentHelper.apply {
+            if ((viewModel.getNearestExpandableListSize() == 0).and(navigateToAppSettings)) {
+                setNavigationToExternalIntent()
+                handlePermissionResponse(
+                    locationServicesHelper.checkForLastLocation(
+                        locationCallback
+                    )
+                )
+            }
         }
         if (allowRefresh) {
             allowRefresh = false
@@ -442,64 +458,15 @@ class TabFragment : Fragment() {
         super.onDestroy()
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        when (requestCode) {
-            MY_PERMISSIONS_REQUEST_LOCATION -> {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (mContext.let {
-                            ContextCompat.checkSelfPermission(
-                                it,
-                                Manifest.permission.ACCESS_FINE_LOCATION
-                            )
-                        } == PackageManager.PERMISSION_GRANTED
-                    ) {
-                        Log.d(TAG, "Check for permission here")
-                        handlePermissionResponse(
-                            locationServicesHelper.checkForLastLocation(
-                                locationCallback
-                            )
-                        )
-                    }
-                } else {
-                    showPermissionDialog()
-                }
-            }
-        }
-    }
-
     private fun showPermissionDialog() {
         if (isPermissionDialogActive) {
             return
         }
         val cancellable: Boolean = numberOfTries <= 1
-        val dialog = AlertDialogView(this.requireContext()).buildDialog(
+        AlertDialogView(this.requireContext()).showDialog(
             cancellable,
-            object : DialogListener {
-                override fun onClick(status: StatusEnum) {
-                    navigateToAppSettings = true
-                    startActivity(IntentHelper.locationAppPermissionSettings())
-                    isPermissionDialogActive = false
-                }
-
-                override fun onCancel(status: StatusEnum) {
-                    numberOfTries += 1
-                    handlePermissionResponse(
-                        locationServicesHelper.requestForLocationPermission(
-                        )
-                    )
-                    isPermissionDialogActive = false
-                }
-
-            })
-        dialog.show()
+            dialogCallback
+        )
         isPermissionDialogActive = true
-        val button: Button = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-        button.isEnabled = cancellable
     }
 }
