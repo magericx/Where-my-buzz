@@ -19,6 +19,10 @@ class MainActivity : AppCompatActivity() {
     private var tabLayout: TabLayout? = null
     private var viewPager: ViewPager? = null
 
+    companion object {
+        const val TAG = "MainActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -32,16 +36,12 @@ class MainActivity : AppCompatActivity() {
         tabLayout!!.setupWithViewPager(viewPager)
     }
 
-    companion object {
-        const val TAG = "MainActivity"
+
+    override fun onDestroy() {
+        super.onDestroy()
+        tabLayout = null
+        viewPager = null
+        toolbar = null
     }
 
-//    override fun onRequestPermissionsResult(
-//        requestCode: Int,
-//        permissions: Array<String>,
-//        grantResults: IntArray
-//    ) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//        Log.d(TAG,"Callback received here")
-//    }
 }

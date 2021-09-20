@@ -3,9 +3,13 @@ package com.example.wheremybuzz.utils.helper.network
 import android.content.Context
 import android.net.ConnectivityManager
 import com.example.wheremybuzz.MyApplication
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object NetworkUtil {
-    private val context: Context = MyApplication.instance.applicationContext
+@Singleton
+class NetworkUtil @Inject constructor(@ApplicationContext private val context: Context) {
+    //private val context: Context = MyApplication.instance.applicationContext
 
     private var isEnabled = false
 

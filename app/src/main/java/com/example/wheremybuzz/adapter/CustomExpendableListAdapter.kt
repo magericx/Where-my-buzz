@@ -26,9 +26,10 @@ import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.facebook.shimmer.ShimmerFrameLayout
 import java.util.*
 import java.util.concurrent.ExecutorService
+import javax.inject.Inject
 
 
-class CustomExpandableListAdapter(
+class CustomExpandableListAdapter @Inject constructor (
     private val context: Context, private val expandableListTitle: List<String>,
     private val expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
 ) : BaseExpandableListAdapter() {
@@ -127,10 +128,6 @@ class CustomExpandableListAdapter(
                     thirdArriveTime
                 )
                 setBusType(expandedListText.Services!!.NextBus3.Type, thirdBusIcon)
-//            Log.d(
-//                TAG,
-//                "Returned date is ${TimeUtil.retrieveDifferenceFromNow(expandedListText.Services!!.NextBus.EstimatedArrival)}"
-//            )
             } else {
                 busNumber.text = context.getString(R.string.not_available)
             }

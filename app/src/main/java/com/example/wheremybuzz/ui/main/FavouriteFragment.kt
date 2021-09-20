@@ -11,11 +11,12 @@ import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.wheremybuzz.R
-import com.example.wheremybuzz.ViewModelFactory
+//import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
 import com.example.wheremybuzz.model.callback.StatusCallBack
@@ -26,8 +27,11 @@ import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.BusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import dagger.hilt.android.scopes.FragmentScoped
-import enum.FragmentType
+import com.example.wheremybuzz.enum.FragmentType
+import dagger.hilt.EntryPoint
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 @FragmentScoped
 class FavouriteFragment : Fragment() {
 
@@ -44,7 +48,8 @@ class FavouriteFragment : Fragment() {
     }
 
     var sharedPreference: SharedPreferenceHelper = SharedPreferenceManager.getFavouriteSharedPreferenceHelper
-    private lateinit var viewModel: BusStopsViewModel
+    //private lateinit var viewModel: BusStopsViewModel
+    private val viewModel: BusStopsViewModel by viewModels()
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     private lateinit var expandableListView: ExpandableListView
     private lateinit var swipeContainer: SwipeRefreshLayout
@@ -57,14 +62,14 @@ class FavouriteFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel =
-            ViewModelProvider(
-                requireActivity(),
-                ViewModelFactory(requireActivity().application)
-            ).get(
-                BusStopsViewModel::class.java
-            )
-        if (NetworkUtil.getNetworkConnection().and(sharedPreference.checkIfListIsEmpty().not())) {
+//        viewModel =
+//            ViewModelProvider(
+//                requireActivity(),
+//                ViewModelFactory(requireActivity().application)
+//            ).get(
+//                BusStopsViewModel::class.java
+//            )
+        if (viewModel.getNetworkConnection().and(sharedPreference.checkIfListIsEmpty().not())) {
             observeFavouriteBusStopsModel()
         }
 
@@ -75,7 +80,7 @@ class FavouriteFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         Log.d(TAG,"Invoke here again")
-        if (NetworkUtil.getNetworkConnection(cache=false).and(sharedPreference.checkIfListIsEmpty().not())) {
+        if (viewModel.getNetworkConnection(cache=false).and(sharedPreference.checkIfListIsEmpty().not())) {
             parentView = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = parentView.findViewById(R.id.shimmer_view_container)
             swipeContainer = parentView.findViewById(R.id.swipeContainer)
@@ -96,7 +101,7 @@ class FavouriteFragment : Fragment() {
 
     override fun onViewCreated(view: View, @Nullable savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        if (NetworkUtil.getNetworkConnection().and(sharedPreference.checkIfListIsEmpty().not())) {
+        if (viewModel.getNetworkConnection().and(sharedPreference.checkIfListIsEmpty().not())) {
             setListenersForOriginalView()
         } else {
             setListenersForErrorView(errorView!!)
@@ -106,7 +111,7 @@ class FavouriteFragment : Fragment() {
     private fun setListenersForErrorView(errorView: ErrorView) {
         errorView.let { it ->
             it.setupErrorListeners {
-                if (NetworkUtil.getNetworkConnection(cache=false).not()){
+                if (viewModel.getNetworkConnection(cache=false).not()){
                     Toast.makeText(requireContext(),R.string.disable_network,Toast.LENGTH_SHORT).show()
                     return@setupErrorListeners
                 }

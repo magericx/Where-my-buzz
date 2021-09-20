@@ -1,11 +1,11 @@
 package com.example.wheremybuzz.viewModel
 
-import android.app.Application
+import android.content.Context
 import android.util.Log
 import android.widget.ExpandableListAdapter
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.model.*
@@ -15,19 +15,23 @@ import com.example.wheremybuzz.repository.BusScheduleRepository
 import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import enum.FragmentType
+import com.example.wheremybuzz.enum.FragmentType
+import com.example.wheremybuzz.utils.helper.network.NetworkUtil
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.*
 import java.util.concurrent.ExecutorService
 import javax.inject.Inject
 
 @HiltViewModel
-class BusStopsViewModel @Inject constructor (application: Application) : AndroidViewModel(application) {
+class BusStopsViewModel @Inject constructor(
+    @ApplicationContext private val applicationContext: Context,
+    private val networkHelper: NetworkUtil
+) : ViewModel() {
 
     companion object {
         private val TAG = "NearestBusStopsView"
     }
 
-    private val applicationContext = getApplication<Application>().applicationContext
     lateinit var nearestBusStopsGeoListObservable: MutableLiveData<StatusEnum>
     lateinit var favouriteBusStopsGeoListObservable: MutableLiveData<StatusEnum>
     var executorService: ExecutorService
@@ -187,7 +191,7 @@ class BusStopsViewModel @Inject constructor (application: Application) : Android
         )
     }
 
-    fun getFavouriteBusStopsGeoListObservable(listOfBusStopCodes: Map<String, String>): LiveData<StatusEnum>? {
+    fun getFavouriteBusStopsGeoListObservable(listOfBusStopCodes: Map<String, String>): LiveData<StatusEnum> {
         favouriteBusStopsGeoListObservable = MutableLiveData()
         executorService2.submit {
             setInitialExpandableFavouriteListDetail(listOfBusStopCodes)
@@ -196,7 +200,7 @@ class BusStopsViewModel @Inject constructor (application: Application) : Android
         return favouriteBusStopsGeoListObservable
     }
 
-    fun getNearestBusStopsGeoListObservable(location: GeoLocation): LiveData<StatusEnum>? {
+    fun getNearestBusStopsGeoListObservable(location: GeoLocation): LiveData<StatusEnum> {
         nearestBusStopsGeoListObservable = MutableLiveData()
         executorService2.submit {
             nearestBusRepository!!.getNearestBusStops(location) {
@@ -316,6 +320,10 @@ class BusStopsViewModel @Inject constructor (application: Application) : Android
                 }
             }
         }
+    }
+
+    fun getNetworkConnection(cache: Boolean = true): Boolean {
+        return networkHelper.getNetworkConnection(cache)
     }
 
 

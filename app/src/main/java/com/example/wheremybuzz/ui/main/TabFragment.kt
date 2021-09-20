@@ -3,7 +3,6 @@ package com.example.wheremybuzz.ui.main
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.app.Activity
 import android.location.Location
-import android.net.Network
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -17,11 +16,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.Nullable
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.wheremybuzz.R
-import com.example.wheremybuzz.ViewModelFactory
+//import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.GeoLocation
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
@@ -40,8 +41,10 @@ import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.BusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import dagger.hilt.android.scopes.FragmentScoped
-import enum.FragmentType
+import com.example.wheremybuzz.enum.FragmentType
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 @FragmentScoped
 class TabFragment : Fragment() {
 
@@ -67,7 +70,8 @@ class TabFragment : Fragment() {
     private lateinit var swipeContainer: SwipeRefreshLayout
     private lateinit var expandableListAdapter: ExpandableListAdapter
     private lateinit var expandableListTitle: List<String>
-    private lateinit var viewModel: BusStopsViewModel
+    //private lateinit var viewModel: BusStopsViewModel
+    private val viewModel: BusStopsViewModel by viewModels()
 
     private lateinit var sharedPreference: SharedPreferenceHelper
     private lateinit var cacheHelper: CacheHelper
@@ -160,14 +164,14 @@ class TabFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         this.sharedPreference = SharedPreferenceManager.getSharedPreferenceHelper
-        activity?.application?.let {
-            viewModel =
-                ViewModelProvider(requireActivity(), ViewModelFactory(it)).get(
-                    BusStopsViewModel::class.java
-                )
-        }
+//        activity?.application?.let {
+//            viewModel =
+//                ViewModelProvider(requireActivity(), ViewModelFactory(it)).get(
+//                    BusStopsViewModel::class.java
+//                )
+//        }
         locationServicesHelper = LocationServicesHelper(this.activity as Activity)
-        if (NetworkUtil.getNetworkConnection()) {
+        if (viewModel.getNetworkConnection()) {
             // check if busStopCode is empty or missing, retrieve and save to cache
             CacheManager.initializeCacheHelper?.let {
                 cacheHelper = it
@@ -192,7 +196,7 @@ class TabFragment : Fragment() {
     ): View {
         //refetch network status again for second time, since onCreate won't be called anymore
         Log.d(TAG, "Invoke onCreateView here")
-        if (NetworkUtil.getNetworkConnection(cache=false)) {
+        if (viewModel.getNetworkConnection(cache=false)) {
             parentView = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = parentView.findViewById(R.id.shimmer_view_container)
             swipeContainer = parentView.findViewById(R.id.swipeContainer)
@@ -216,7 +220,7 @@ class TabFragment : Fragment() {
     override fun onViewCreated(view: View, @Nullable savedInstanceState: Bundle?) {
         Log.d(TAG, "Called onViewCreated here $view")
         super.onViewCreated(view, savedInstanceState)
-        if (NetworkUtil.getNetworkConnection()) {
+        if (viewModel.getNetworkConnection()) {
             setListenersForOriginalView()
         } else {
             //callback from ErrorView listener
@@ -228,7 +232,7 @@ class TabFragment : Fragment() {
         //casting is very expensive, do it once here
         errorView.let {
             it.setupErrorListeners {
-                if (NetworkUtil.getNetworkConnection(cache=false).not()){
+                if (viewModel.getNetworkConnection(cache=false).not()){
                     Toast.makeText(requireContext(),R.string.disable_network,Toast.LENGTH_SHORT).show()
                     return@setupErrorListeners
                 }
