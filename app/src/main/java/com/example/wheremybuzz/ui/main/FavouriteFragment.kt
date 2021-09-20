@@ -1,5 +1,6 @@
 package com.example.wheremybuzz.ui.main
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -42,26 +43,20 @@ class FavouriteFragment : Fragment() {
         }
     }
 
-    private var enabledNetwork: Boolean = false
-    lateinit var sharedPreference: SharedPreferenceHelper
+    var sharedPreference: SharedPreferenceHelper = SharedPreferenceManager.getFavouriteSharedPreferenceHelper
     private lateinit var viewModel: BusStopsViewModel
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     private lateinit var expandableListView: ExpandableListView
     private lateinit var swipeContainer: SwipeRefreshLayout
     lateinit var expandableListTitle: List<String>
     lateinit var expandableListAdapter: ExpandableListAdapter
+    lateinit var parentView: View
     private var errorView: ErrorView? = null
 
     private var allowRefresh = false
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enabledNetwork = NetworkUtil.haveNetworkConnection()
-    }
-
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        sharedPreference = SharedPreferenceManager.getFavouriteSharedPreferenceHelper
         viewModel =
             ViewModelProvider(
                 requireActivity(),
@@ -69,7 +64,7 @@ class FavouriteFragment : Fragment() {
             ).get(
                 BusStopsViewModel::class.java
             )
-        if (enabledNetwork) {
+        if (NetworkUtil.getNetworkConnection().and(sharedPreference.checkIfListIsEmpty().not())) {
             observeFavouriteBusStopsModel()
         }
 
@@ -79,25 +74,29 @@ class FavouriteFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        enabledNetwork = NetworkUtil.haveNetworkConnection()
-        val view: View?
-        if (enabledNetwork) {
-            view = inflater.inflate(R.layout.fragment_tab, container, false)
-            shimmeringLayoutView = view.findViewById(R.id.shimmer_view_container)
-            swipeContainer = view.findViewById(R.id.swipeContainer)
+        Log.d(TAG,"Invoke here again")
+        if (NetworkUtil.getNetworkConnection(cache=false).and(sharedPreference.checkIfListIsEmpty().not())) {
+            parentView = inflater.inflate(R.layout.fragment_tab, container, false)
+            shimmeringLayoutView = parentView.findViewById(R.id.shimmer_view_container)
+            swipeContainer = parentView.findViewById(R.id.swipeContainer)
             enableShimmer()
-            expandableListView = view.findViewById(R.id.expandableListView)
-            Log.d(TAG, "debug expendable $expandableListView")
+            expandableListView = parentView.findViewById(R.id.expandableListView)
         } else {
-            errorView = ErrorView(container!!)
-            view = errorView!!.build()
+            errorView = activity?.let {
+                container?.let {
+                    ErrorView(it)
+                }
+            }
+            errorView?.build()?.let {
+                parentView = it
+            }
         }
-        return view as View
+        return parentView
     }
 
     override fun onViewCreated(view: View, @Nullable savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        if (enabledNetwork) {
+        if (NetworkUtil.getNetworkConnection().and(sharedPreference.checkIfListIsEmpty().not())) {
             setListenersForOriginalView()
         } else {
             setListenersForErrorView(errorView!!)
@@ -105,28 +104,43 @@ class FavouriteFragment : Fragment() {
     }
 
     private fun setListenersForErrorView(errorView: ErrorView) {
-        errorView.let {
+        errorView.let { it ->
             it.setupErrorListeners {
+                if (NetworkUtil.getNetworkConnection(cache=false).not()){
+                    Toast.makeText(requireContext(),R.string.disable_network,Toast.LENGTH_SHORT).show()
+                    return@setupErrorListeners
+                }
+                else if(sharedPreference.checkIfListIsEmpty()){
+                    Toast.makeText(requireContext(),R.string.empty_preferences,Toast.LENGTH_SHORT).show()
+                    return@setupErrorListeners
+                }
                 (view as ViewGroup).let {
                     Log.d(TAG, "Number of child views ${it.childCount}")
                     it.removeAllViews()
-                    parentFragmentManager.beginTransaction()
-                        .detach(this)
-                        .attach(this)
-                        .commit()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+                        parentFragmentManager.beginTransaction().detach(this).commitNow()
+                        parentFragmentManager.beginTransaction().attach(this).commitNow()
+                    }else{
+                        parentFragmentManager.beginTransaction()
+                            .detach(this)
+                            .attach(this)
+                            .commit()
+                    }
                 }
             }
         }
     }
 
     private fun showErrorPage() {
-        (view as ViewGroup).let {
+        (view as ViewGroup).let { viewgroup ->
             if (errorView == null) {
-                errorView = ErrorView(it)
+                activity?.let { errorView = ErrorView(viewgroup) }
             }
-            it.removeAllViews()
-            it.addView(errorView!!.build())
-            setListenersForErrorView(errorView!!)
+            errorView?.let {
+                viewgroup.removeAllViews()
+                viewgroup.addView(it.build())
+                setListenersForErrorView(it)
+            }
         }
     }
 
@@ -226,15 +240,6 @@ class FavouriteFragment : Fragment() {
             ).show()
             false
         }
-//        swipeContainer.setOnRefreshListener {
-//            refreshExpandedList(true)
-//        }
-//        swipeContainer.setColorSchemeResources(
-//            android.R.color.holo_blue_bright,
-//            android.R.color.holo_green_light,
-//            android.R.color.holo_orange_light,
-//            android.R.color.holo_red_light
-//        )
         setListeners()
     }
 

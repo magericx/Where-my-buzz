@@ -2,6 +2,7 @@ package com.example.wheremybuzz.utils.helper.sharedpreference
 
 import android.R.attr.data
 import android.content.SharedPreferences
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
@@ -12,6 +13,9 @@ class SharedPreferenceHelper(
     private val sharedPreference: SharedPreferences
 ) {
 
+    companion object{
+        const val TAG = "SharedPreferenceHelper"
+    }
     private val gsonInstance by lazy {
         return@lazy Gson()
     }
@@ -88,8 +92,11 @@ class SharedPreferenceHelper(
     }
 
     fun checkIfListIsEmpty(): Boolean {
-        val tempString = sharedPreference.getString(this.preferenceKeyName, "")
-        return tempString.isNullOrEmpty()
+        val tempString = sharedPreference.getString(this.preferenceKeyName, "") ?: return true
+        tempString.let{
+            val mapString: Map<String, String> = convertToMap(it)
+            return mapString.isEmpty()
+        }
     }
 
     private fun convertToMap(tempString: String): Map<String, String> {

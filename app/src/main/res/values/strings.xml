@@ -13,4 +13,6 @@
     <string name="button_view_tag">button_view_tag</string>
     <string name="restart_app">Restart App</string>
     <string name="location_failed">Failed to get location, please try again later</string>
+    <string name="disable_network">Need to enable network to continue</string>
+    <string name="empty_preferences">Start adding 1 item to favourite</string>
 </resources>

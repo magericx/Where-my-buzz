@@ -6,8 +6,13 @@ import com.example.wheremybuzz.MyApplication
 
 object NetworkUtil {
     private val context: Context = MyApplication.instance.applicationContext
-    fun haveNetworkConnection(): Boolean {
-        var connected = false
+
+    private var isEnabled = false
+
+    fun getNetworkConnection(cache: Boolean = true): Boolean {
+        if (cache){
+            return isEnabled
+        }
         val cm =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val activeNetwork = cm.activeNetworkInfo
@@ -15,15 +20,15 @@ object NetworkUtil {
             // connected to the internet
             if (activeNetwork.type == ConnectivityManager.TYPE_WIFI) {
                 // connected to wifi
-                connected = true
+                isEnabled = true
             } else if (activeNetwork.type == ConnectivityManager.TYPE_MOBILE) {
                 // connected to mobile data
-                connected = true
+                isEnabled = true
             }
         } else {
             // not connected to the internet
-            connected = false
+            isEnabled = false
         }
-        return connected
+        return isEnabled
     }
 }

@@ -2,28 +2,24 @@ package com.example.wheremybuzz.ui.main
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.app.Activity
-import android.content.Context
 import android.location.Location
+import android.net.Network
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ExpandableListAdapter
 import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.Nullable
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.example.wheremybuzz.LocationConstants
-import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.GeoLocation
@@ -76,7 +72,6 @@ class TabFragment : Fragment() {
     private lateinit var sharedPreference: SharedPreferenceHelper
     private lateinit var cacheHelper: CacheHelper
     private var allowRefresh = false
-    private var enabledNetwork = false
     lateinit var parentView: View
     private var errorView: ErrorView? = null
     var numberOfTries = 0
@@ -159,7 +154,6 @@ class TabFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.getInt("pos")?.let { position = it }
-        enabledNetwork = NetworkUtil.haveNetworkConnection()
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -173,7 +167,7 @@ class TabFragment : Fragment() {
                 )
         }
         locationServicesHelper = LocationServicesHelper(this.activity as Activity)
-        if (enabledNetwork) {
+        if (NetworkUtil.getNetworkConnection()) {
             // check if busStopCode is empty or missing, retrieve and save to cache
             CacheManager.initializeCacheHelper?.let {
                 cacheHelper = it
@@ -197,10 +191,8 @@ class TabFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         //refetch network status again for second time, since onCreate won't be called anymore
-        enabledNetwork = NetworkUtil.haveNetworkConnection()
         Log.d(TAG, "Invoke onCreateView here")
-        Log.d(TAG, "enabledNetwork in onCreateView is $enabledNetwork")
-        if (enabledNetwork) {
+        if (NetworkUtil.getNetworkConnection(cache=false)) {
             parentView = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = parentView.findViewById(R.id.shimmer_view_container)
             swipeContainer = parentView.findViewById(R.id.swipeContainer)
@@ -224,7 +216,7 @@ class TabFragment : Fragment() {
     override fun onViewCreated(view: View, @Nullable savedInstanceState: Bundle?) {
         Log.d(TAG, "Called onViewCreated here $view")
         super.onViewCreated(view, savedInstanceState)
-        if (enabledNetwork) {
+        if (NetworkUtil.getNetworkConnection()) {
             setListenersForOriginalView()
         } else {
             //callback from ErrorView listener
@@ -236,13 +228,22 @@ class TabFragment : Fragment() {
         //casting is very expensive, do it once here
         errorView.let {
             it.setupErrorListeners {
+                if (NetworkUtil.getNetworkConnection(cache=false).not()){
+                    Toast.makeText(requireContext(),R.string.disable_network,Toast.LENGTH_SHORT).show()
+                    return@setupErrorListeners
+                }
                 (view as ViewGroup).let { container ->
-                    Log.d(TAG, "Number of child views ${container.childCount}")
+                    Log.d(FavouriteFragment.TAG, "Number of child views ${container.childCount}")
                     container.removeAllViews()
-                    parentFragmentManager.beginTransaction()
-                        .detach(this)
-                        .attach(this)
-                        .commit()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+                        parentFragmentManager.beginTransaction().detach(this).commitNow()
+                        parentFragmentManager.beginTransaction().attach(this).commitNow()
+                    }else{
+                        parentFragmentManager.beginTransaction()
+                            .detach(this)
+                            .attach(this)
+                            .commit()
+                    }
                 }
             }
         }
