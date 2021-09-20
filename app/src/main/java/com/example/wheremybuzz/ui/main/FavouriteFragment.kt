@@ -24,8 +24,10 @@ import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceMan
 import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.BusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
+import dagger.hilt.android.scopes.FragmentScoped
 import enum.FragmentType
 
+@FragmentScoped
 class FavouriteFragment : Fragment() {
 
     companion object {
@@ -61,7 +63,10 @@ class FavouriteFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         sharedPreference = SharedPreferenceManager.getFavouriteSharedPreferenceHelper
         viewModel =
-            ViewModelProvider(requireActivity(), ViewModelFactory(activity!!.application)).get(
+            ViewModelProvider(
+                requireActivity(),
+                ViewModelFactory(requireActivity().application)
+            ).get(
                 BusStopsViewModel::class.java
             )
         if (enabledNetwork) {
@@ -132,7 +137,7 @@ class FavouriteFragment : Fragment() {
     private fun refreshExpandedList(swipeRefresh: Boolean) {
         val list: HashMap<String, String>? = getCurrentExpandedList()
         if (!list.isNullOrEmpty()) {
-            Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
+            Log.d(TAG, "Refresh for favourite fragment here $list")
             viewModel.refreshExpandedBusStops(list, object : StatusCallBack {
                 override fun updateOnResult(status: Boolean) {
                     if (status) {
@@ -160,11 +165,11 @@ class FavouriteFragment : Fragment() {
         Log.d(TAG, "total number of group count $groupCount")
         val visibleExpandedList: HashMap<String, String> = hashMapOf()
         for (i in 0 until groupCount) {
-            val expanded = expandableListView.isGroupExpanded(i) ?: false
+            val expanded = expandableListView.isGroupExpanded(i)
             Log.d(TAG, "group position number $i is $expanded")
             if (expanded) {
                 val busStopCode = (expandableListAdapter.getChild(
-                    i, 1
+                    i, 0
                 ) as StoredBusMeta).BusStopCode
                 val busStopName = (expandableListAdapter.getGroup(
                     i
@@ -191,7 +196,7 @@ class FavouriteFragment : Fragment() {
     private fun setListenersForOriginalView() {
         expandableListView.setOnGroupExpandListener { groupPosition ->
             Toast.makeText(
-                activity!!.applicationContext,
+                requireActivity().applicationContext,
                 (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
                 Toast.LENGTH_SHORT
             ).show()
@@ -206,7 +211,7 @@ class FavouriteFragment : Fragment() {
 
         expandableListView.setOnGroupCollapseListener { groupPosition ->
             Toast.makeText(
-                activity!!.applicationContext,
+                requireActivity().applicationContext,
                 (expandableListTitle as ArrayList<String>)[groupPosition] + " List Collapsed.",
                 Toast.LENGTH_SHORT
             ).show()
@@ -214,7 +219,7 @@ class FavouriteFragment : Fragment() {
 
         expandableListView.setOnChildClickListener { parent, v, groupPosition, childPosition, id ->
             Toast.makeText(
-                activity!!.applicationContext,
+                requireActivity().applicationContext,
                 (expandableListTitle as ArrayList<String>)[groupPosition] + " -> "
                         + viewModel.expandableFavouriteListDetail[(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
                 Toast.LENGTH_SHORT
@@ -260,7 +265,7 @@ class FavouriteFragment : Fragment() {
                 Observer<StatusEnum> { status ->
                     if (status != null) {
                         Toast.makeText(
-                            activity!!.applicationContext, "Update headers on page",
+                            requireActivity().applicationContext, "Update headers on page",
                             Toast.LENGTH_SHORT
                         ).show()
                         if (status == StatusEnum.Success) createFavouriteExpandableListAdapter()

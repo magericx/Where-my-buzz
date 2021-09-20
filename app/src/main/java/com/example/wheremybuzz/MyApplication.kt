@@ -8,9 +8,11 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.core.os.HandlerCompat
+import dagger.hilt.android.HiltAndroidApp
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+@HiltAndroidApp
 class MyApplication : Application(), Application.ActivityLifecycleCallbacks {
     override fun onCreate() {
         super.onCreate()

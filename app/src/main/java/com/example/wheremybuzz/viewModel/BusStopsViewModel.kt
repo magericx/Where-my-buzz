@@ -14,12 +14,14 @@ import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.repository.BusScheduleRepository
 import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import enum.FragmentType
 import java.util.*
 import java.util.concurrent.ExecutorService
+import javax.inject.Inject
 
-
-class BusStopsViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class BusStopsViewModel @Inject constructor (application: Application) : AndroidViewModel(application) {
 
     companion object {
         private val TAG = "NearestBusStopsView"

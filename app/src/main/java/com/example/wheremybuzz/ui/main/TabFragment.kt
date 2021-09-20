@@ -43,9 +43,10 @@ import com.example.wheremybuzz.view.DialogListener
 import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.BusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
+import dagger.hilt.android.scopes.FragmentScoped
 import enum.FragmentType
 
-
+@FragmentScoped
 class TabFragment : Fragment() {
 
     companion object {
@@ -64,7 +65,6 @@ class TabFragment : Fragment() {
         private const val forceUpdateCache = false
     }
 
-    private val mContext: Context = MyApplication.instance.applicationContext
     var position = 0
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     var expandableListView: ExpandableListView? = null

@@ -11,8 +11,9 @@ import androidx.viewpager.widget.ViewPager
 import com.example.wheremybuzz.ui.main.ViewPagerAdapter
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.google.android.material.tabs.TabLayout
+import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private var toolbar: Toolbar? = null
     private var tabLayout: TabLayout? = null
