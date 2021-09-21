@@ -9,7 +9,6 @@ import javax.inject.Singleton
 
 @Singleton
 class NetworkUtil @Inject constructor(@ApplicationContext private val context: Context) {
-    //private val context: Context = MyApplication.instance.applicationContext
 
     private var isEnabled = false
 

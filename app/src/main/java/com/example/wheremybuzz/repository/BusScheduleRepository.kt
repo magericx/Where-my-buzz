@@ -1,38 +1,38 @@
 package com.example.wheremybuzz.repository
 
 import android.content.Context
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.util.Log
-import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.api.ApiHelper
 import com.example.wheremybuzz.model.BusScheduleMeta
-import com.example.wheremybuzz.model.callback.BusScheduleMetaCallBack
 import com.example.wheremybuzz.model.BusScheduleMetaRefresh
+import com.example.wheremybuzz.model.callback.BusScheduleMetaCallBack
 import com.example.wheremybuzz.utils.helper.network.RXDisposableManager
-import com.example.wheremybuzz.utils.helper.retrofit.LtaRetrofitHelper
-import retrofit2.Call
-import retrofit2.Response
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import retrofit2.Call
+import retrofit2.Response
 import java.util.*
-import kotlin.collections.HashMap
+import javax.inject.Inject
 
-class BusScheduleRepository {
-    companion object{
-        private val context: Context = MyApplication.instance.applicationContext
+class BusScheduleRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val apiHelper: ApiHelper
+) {
+    companion object {
         private val TAG: String = "BusScheduleRepository"
-        private val ai: ApplicationInfo = context.packageManager
-            .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
-        private val ltaApiKey: String = ai.metaData["com.lta.android.geo.LTA_KEY"] as String
     }
+
+    private val ltaApiKey: String = context.packageManager.getApplicationInfo(
+        context.packageName,
+        PackageManager.GET_META_DATA
+    ).metaData["com.lta.android.geo.LTA_KEY"] as String
 
     //fetch for single bus stop
     fun getBusScheduleMetaList(busStopCode: Long, callback: BusScheduleMetaCallBack) {
-        val service = LtaRetrofitHelper.busScheduleApiService
-        val call = service.getBusScheduleMeta(
-            ltaApiKey, busStopCode
-        )
+        val call = apiHelper.getBusScheduleMeta(ltaApiKey, busStopCode)
         call.enqueue(object : retrofit2.Callback<BusScheduleMeta> {
             override fun onResponse(
                 call: Call<BusScheduleMeta>,
@@ -59,16 +59,13 @@ class BusScheduleRepository {
         viewModelCallBack: (BusScheduleMetaRefresh) -> Unit
     ) {
         val retrievedBusScheduleList: MutableList<Pair<String, BusScheduleMeta>> = mutableListOf()
-        val service = LtaRetrofitHelper.busScheduleApiServiceWithRx
         val requests = ArrayList<Observable<*>>()
 
         //setup observable based on items that needs to be refreshed
         if (busStopMap.isNotEmpty()) {
             busStopMap.forEach { (key, value) ->
                 requests.add(
-                    service.getBusScheduleMetaObservable(
-                        ltaApiKey, key.toLong()
-                    )
+                    apiHelper.getBusScheduleMetaObservable(ltaApiKey, key.toLong())
                 )
             }
             //do zipping of the results as a whole here
@@ -90,7 +87,6 @@ class BusScheduleRepository {
                             }
                         }
                     }
-                    //Any()// <-- Here we emit just new empty Object(), but you can emit anything
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
@@ -106,7 +102,6 @@ class BusScheduleRepository {
                 }
             RXDisposableManager.add(disposable)
         }
-        //disposables.add(disposable)
     }
 
     fun destroyDisposable() {

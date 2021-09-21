@@ -1,33 +1,37 @@
 package com.example.wheremybuzz.repository
 
 import android.content.Context
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.util.Log
 import com.example.wheremybuzz.ApiConstants
-import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.api.ApiHelper
 import com.example.wheremybuzz.model.BusStopCode
 import com.example.wheremybuzz.model.BusStopsCodeResponse
 import com.example.wheremybuzz.model.Value
+import com.example.wheremybuzz.utils.helper.cache.CacheHelper
 import com.example.wheremybuzz.utils.helper.cache.CacheManager
 import com.example.wheremybuzz.utils.helper.network.RXDisposableManager
-import com.example.wheremybuzz.utils.helper.cache.CacheHelper
-import com.example.wheremybuzz.utils.helper.retrofit.LtaRetrofitHelper
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import retrofit2.Call
 import retrofit2.Response
 import java.util.*
+import javax.inject.Inject
 
-class BusStopCodeRepository {
+class BusStopCodeRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val apiHelper: ApiHelper
+) {
     companion object {
         private val TAG: String = "BusStopCodeRepository"
-        private val context: Context = MyApplication.instance.applicationContext
-        private val ai: ApplicationInfo = context.packageManager
-            .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
-        private val ltaApiKey: String = ai.metaData["com.lta.android.geo.LTA_KEY"] as String
     }
+
+    private val ltaApiKey: String = context.packageManager.getApplicationInfo(
+        context.packageName,
+        PackageManager.GET_META_DATA
+    ).metaData["com.lta.android.geo.LTA_KEY"] as String
 
     var cacheHelper: CacheHelper = CacheManager.initializeCacheHelper!!
 
@@ -40,8 +44,6 @@ class BusStopCodeRepository {
         viewModelCallBack: (BusStopCode) -> Unit
     ) {
         var found = false
-//        val data: MutableLiveData<BusStopCode> =
-//            MutableLiveData()
         val cacheData: BusStopsCodeResponse? = busStopCodeTempCache ?: cacheHelper.readJSONFile()
         if (cacheData != null) {
             for (i in cacheData.value.indices) {
@@ -75,15 +77,11 @@ class BusStopCodeRepository {
         longtitude: Double,
         viewModelCallBack: (BusStopCode) -> Unit
     ) {
-        val service = LtaRetrofitHelper.busStopsCodeApiService
-        val call = service.getBusStopsCode(
-            ltaApiKey, skip
-        )
+        val call = apiHelper.getBusStopsCode(ltaApiKey, skip)
         var found = false
 
         if (!found && (skip == 5500)) {
             viewModelCallBack(BusStopCode(""))
-            //observerList.postValue(BusStopCode(""))
         }
 
         call.enqueue(object : retrofit2.Callback<BusStopsCodeResponse> {
@@ -160,19 +158,16 @@ class BusStopCodeRepository {
 
     //retrieve bus stop code from API and store into cache file
     fun retrieveBusStopCodesToCache(viewModelCallBack: (BusStopsCodeResponse) -> Unit) {
-        val service = LtaRetrofitHelper.busStopsCodeApiServiceWithRx
+//        val service = LtaRetrofitHelper.busStopsCodeApiServiceWithRx
         val busStopCodesList: MutableList<Value> = mutableListOf()
         val skip = 0
         val increment = ApiConstants.BUS_STOP_CODE_INCREMENT
         val max = ApiConstants.BUS_STOP_CODE_MAX
-        //var busStopCodeCache: BusStopsCodeResponse? = null
         val requests = ArrayList<Observable<*>>()
 
         for (i in skip..max step increment) {
             requests.add(
-                service.getBusStopsCodeObservable(
-                    ltaApiKey, i
-                )
+                apiHelper.getBusStopsCodeObservable(ltaApiKey, i)
             )
         }
         val disposable = Observable
