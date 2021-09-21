@@ -25,7 +25,10 @@ import javax.inject.Inject
 @HiltViewModel
 class BusStopsViewModel @Inject constructor(
     @ApplicationContext private val applicationContext: Context,
-    private val networkHelper: NetworkUtil
+    private val networkHelper: NetworkUtil,
+    private val busScheduleRepository: BusScheduleRepository,
+    private val busStopCodeRepository: BusStopCodeRepository,
+    private val nearestBusRepository: NearestBusRepository,
 ) : ViewModel() {
 
     companion object {
@@ -37,8 +40,8 @@ class BusStopsViewModel @Inject constructor(
     var executorService: ExecutorService
     var executorService2: ExecutorService
 
-    var expandableNearestListDetail: HashMap<String, MutableList<StoredBusMeta>>
-    var expandableFavouriteListDetail: HashMap<String, MutableList<StoredBusMeta>>
+    var expandableNearestListDetail: HashMap<String, MutableList<StoredBusMeta>> = HashMap()
+    var expandableFavouriteListDetail: HashMap<String, MutableList<StoredBusMeta>> = HashMap()
     private lateinit var expandableNearestListAdapter: ExpandableListAdapter
     private lateinit var expandableFavouriteListAdapter: ExpandableListAdapter
     private lateinit var expandableNearestListTitle: List<String>
@@ -46,16 +49,8 @@ class BusStopsViewModel @Inject constructor(
 
     private var busStopCodeTempCache: BusStopsCodeResponse? = null
 
-    var nearestBusRepository: NearestBusRepository? = null
-    var busStopCodeRepository: BusStopCodeRepository? = null
-    var busScheduleRepository: BusScheduleRepository? = null
 
     init {
-        nearestBusRepository = NearestBusRepository()
-        busStopCodeRepository = BusStopCodeRepository()
-        busScheduleRepository = BusScheduleRepository()
-        expandableNearestListDetail = HashMap()
-        expandableFavouriteListDetail = HashMap()
         executorService = MyApplication.poolThread
         executorService2 = MyApplication.poolThread2
     }
@@ -203,7 +198,7 @@ class BusStopsViewModel @Inject constructor(
     fun getNearestBusStopsGeoListObservable(location: GeoLocation): LiveData<StatusEnum> {
         nearestBusStopsGeoListObservable = MutableLiveData()
         executorService2.submit {
-            nearestBusRepository!!.getNearestBusStops(location) {
+            nearestBusRepository.getNearestBusStops(location) {
                 if (!it.BusStopMetaList.isNullOrEmpty()) {
                     val nearestBusStopsList = it.BusStopMetaList
                     for (i in it.BusStopMetaList.indices) {
@@ -212,7 +207,7 @@ class BusStopsViewModel @Inject constructor(
                             nearestBusStopsList[i]!!.latitude,
                             nearestBusStopsList[i]!!.longitude
                         )
-                        busStopCodeRepository!!.getBusStopCodeFromCache(
+                        busStopCodeRepository.getBusStopCodeFromCache(
                             busStopCodeTempCache,
                             nearestBusStopsList[i]!!.busStopName,
                             nearestBusStopsList[i]!!.latitude,
@@ -242,7 +237,7 @@ class BusStopsViewModel @Inject constructor(
     //if API call is success, update temp cache
     fun retrieveBusStopCodesAndSaveCache() {
         executorService2.submit {
-            busStopCodeRepository!!.retrieveBusStopCodesToCache { busStopsCodesResponse ->
+            busStopCodeRepository.retrieveBusStopCodesToCache { busStopsCodesResponse ->
                 busStopCodeTempCache = busStopsCodesResponse
                 Log.d(TAG, "Retrieved cache is $busStopCodeTempCache")
             }
@@ -256,7 +251,7 @@ class BusStopsViewModel @Inject constructor(
         fragmentType: FragmentType
     ) {
         executorService2.submit {
-            busScheduleRepository!!.getBusScheduleMetaList(busStopCode, object :
+            busScheduleRepository.getBusScheduleMetaList(busStopCode, object :
                 BusScheduleMetaCallBack {
                 override fun updateOnResult(busScheduleMeta: BusScheduleMeta) {
                     Log.d(TAG, "calling busScheduleMeta here")
@@ -288,7 +283,7 @@ class BusStopsViewModel @Inject constructor(
                     expandableFavouriteListDetail
                 }
 
-            busScheduleRepository?.getBusScheduleMetaRefreshList(busStopList) { it ->
+            busScheduleRepository.getBusScheduleMetaRefreshList(busStopList) { it ->
                 if (it.servicesList.isNotEmpty()) {
                     Log.d(TAG, "ServiceList size is ${it.servicesList.size}")
                     //update actual data holder
@@ -331,13 +326,11 @@ class BusStopsViewModel @Inject constructor(
     fun destroyRepositories() {
         executorService.shutdown()
         executorService2.shutdown()
-        nearestBusRepository = null
-        busStopCodeRepository = null
-        busScheduleRepository = null
+
     }
 
     //destroy observables
     fun destroyDisposable() {
-        busScheduleRepository?.destroyDisposable()
+        busScheduleRepository.destroyDisposable()
     }
 }
