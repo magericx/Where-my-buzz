@@ -70,6 +70,7 @@ class TabFragment : Fragment() {
     private lateinit var swipeContainer: SwipeRefreshLayout
     private lateinit var expandableListAdapter: ExpandableListAdapter
     private lateinit var expandableListTitle: List<String>
+
     //private lateinit var viewModel: BusStopsViewModel
     private val viewModel: BusStopsViewModel by viewModels()
 
@@ -164,12 +165,6 @@ class TabFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         this.sharedPreference = SharedPreferenceManager.getSharedPreferenceHelper
-//        activity?.application?.let {
-//            viewModel =
-//                ViewModelProvider(requireActivity(), ViewModelFactory(it)).get(
-//                    BusStopsViewModel::class.java
-//                )
-//        }
         locationServicesHelper = LocationServicesHelper(this.activity as Activity)
         if (viewModel.getNetworkConnection()) {
             // check if busStopCode is empty or missing, retrieve and save to cache
@@ -196,7 +191,7 @@ class TabFragment : Fragment() {
     ): View {
         //refetch network status again for second time, since onCreate won't be called anymore
         Log.d(TAG, "Invoke onCreateView here")
-        if (viewModel.getNetworkConnection(cache=false)) {
+        if (viewModel.getNetworkConnection(cache = false)) {
             parentView = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = parentView.findViewById(R.id.shimmer_view_container)
             swipeContainer = parentView.findViewById(R.id.swipeContainer)
@@ -232,17 +227,18 @@ class TabFragment : Fragment() {
         //casting is very expensive, do it once here
         errorView.let {
             it.setupErrorListeners {
-                if (viewModel.getNetworkConnection(cache=false).not()){
-                    Toast.makeText(requireContext(),R.string.disable_network,Toast.LENGTH_SHORT).show()
+                if (viewModel.getNetworkConnection(cache = false).not()) {
+                    Toast.makeText(requireContext(), R.string.disable_network, Toast.LENGTH_SHORT)
+                        .show()
                     return@setupErrorListeners
                 }
                 (view as ViewGroup).let { container ->
                     Log.d(FavouriteFragment.TAG, "Number of child views ${container.childCount}")
                     container.removeAllViews()
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         parentFragmentManager.beginTransaction().detach(this).commitNow()
                         parentFragmentManager.beginTransaction().attach(this).commitNow()
-                    }else{
+                    } else {
                         parentFragmentManager.beginTransaction()
                             .detach(this)
                             .attach(this)
@@ -448,6 +444,10 @@ class TabFragment : Fragment() {
 
     override fun onPause() {
         Log.d(TAG, "onPause is called")
+        if (swipeContainer.isRefreshing){
+            swipeContainer.isRefreshing = false
+            allowRefresh = true
+        }
         viewModel.destroyDisposable()
         super.onPause()
     }

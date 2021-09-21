@@ -28,6 +28,7 @@ import com.example.wheremybuzz.viewModel.BusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import dagger.hilt.android.scopes.FragmentScoped
 import com.example.wheremybuzz.enum.FragmentType
+import com.example.wheremybuzz.utils.helper.intent.IntentHelper
 import dagger.hilt.EntryPoint
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -47,8 +48,8 @@ class FavouriteFragment : Fragment() {
         }
     }
 
-    var sharedPreference: SharedPreferenceHelper = SharedPreferenceManager.getFavouriteSharedPreferenceHelper
-    //private lateinit var viewModel: BusStopsViewModel
+    var sharedPreference: SharedPreferenceHelper =
+        SharedPreferenceManager.getFavouriteSharedPreferenceHelper
     private val viewModel: BusStopsViewModel by viewModels()
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     private lateinit var expandableListView: ExpandableListView
@@ -62,13 +63,6 @@ class FavouriteFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-//        viewModel =
-//            ViewModelProvider(
-//                requireActivity(),
-//                ViewModelFactory(requireActivity().application)
-//            ).get(
-//                BusStopsViewModel::class.java
-//            )
         if (viewModel.getNetworkConnection().and(sharedPreference.checkIfListIsEmpty().not())) {
             observeFavouriteBusStopsModel()
         }
@@ -79,8 +73,10 @@ class FavouriteFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        Log.d(TAG,"Invoke here again")
-        if (viewModel.getNetworkConnection(cache=false).and(sharedPreference.checkIfListIsEmpty().not())) {
+        Log.d(TAG, "Invoke here again")
+        if (viewModel.getNetworkConnection(cache = false)
+                .and(sharedPreference.checkIfListIsEmpty().not())
+        ) {
             parentView = inflater.inflate(R.layout.fragment_tab, container, false)
             shimmeringLayoutView = parentView.findViewById(R.id.shimmer_view_container)
             swipeContainer = parentView.findViewById(R.id.swipeContainer)
@@ -111,21 +107,22 @@ class FavouriteFragment : Fragment() {
     private fun setListenersForErrorView(errorView: ErrorView) {
         errorView.let { it ->
             it.setupErrorListeners {
-                if (viewModel.getNetworkConnection(cache=false).not()){
-                    Toast.makeText(requireContext(),R.string.disable_network,Toast.LENGTH_SHORT).show()
+                if (viewModel.getNetworkConnection(cache = false).not()) {
+                    Toast.makeText(requireContext(), R.string.disable_network, Toast.LENGTH_SHORT)
+                        .show()
                     return@setupErrorListeners
-                }
-                else if(sharedPreference.checkIfListIsEmpty()){
-                    Toast.makeText(requireContext(),R.string.empty_preferences,Toast.LENGTH_SHORT).show()
+                } else if (sharedPreference.checkIfListIsEmpty()) {
+                    Toast.makeText(requireContext(), R.string.empty_preferences, Toast.LENGTH_SHORT)
+                        .show()
                     return@setupErrorListeners
                 }
                 (view as ViewGroup).let {
                     Log.d(TAG, "Number of child views ${it.childCount}")
                     it.removeAllViews()
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         parentFragmentManager.beginTransaction().detach(this).commitNow()
                         parentFragmentManager.beginTransaction().attach(this).commitNow()
-                    }else{
+                    } else {
                         parentFragmentManager.beginTransaction()
                             .detach(this)
                             .attach(this)
@@ -292,8 +289,22 @@ class FavouriteFragment : Fragment() {
         expandableListView.setAdapter(expandableListAdapter)
     }
 
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "Resume app here")
+        if (allowRefresh) {
+            allowRefresh = false
+            refreshExpandedList(swipeRefresh = false)
+        }
+    }
+
     override fun onPause() {
         Log.d(TAG, "onPause is called")
+        if (swipeContainer.isRefreshing){
+            swipeContainer.isRefreshing = false
+            allowRefresh = true
+        }
         viewModel.destroyDisposable()
         super.onPause()
     }
