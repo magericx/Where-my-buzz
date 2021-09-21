@@ -37,8 +37,8 @@ class BusStopsViewModel @Inject constructor(
 
     lateinit var nearestBusStopsGeoListObservable: MutableLiveData<StatusEnum>
     lateinit var favouriteBusStopsGeoListObservable: MutableLiveData<StatusEnum>
-    var executorService: ExecutorService
-    var executorService2: ExecutorService
+    var executorService: ExecutorService = MyApplication.poolThread
+    var executorService2: ExecutorService = MyApplication.poolThread2
 
     var expandableNearestListDetail: HashMap<String, MutableList<StoredBusMeta>> = HashMap()
     var expandableFavouriteListDetail: HashMap<String, MutableList<StoredBusMeta>> = HashMap()
@@ -49,11 +49,6 @@ class BusStopsViewModel @Inject constructor(
 
     private var busStopCodeTempCache: BusStopsCodeResponse? = null
 
-
-    init {
-        executorService = MyApplication.poolThread
-        executorService2 = MyApplication.poolThread2
-    }
 
     fun getExpandableNearestListAdapter(): ExpandableListAdapter {
         return expandableNearestListAdapter

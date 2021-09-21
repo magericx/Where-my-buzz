@@ -26,15 +26,27 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        toolbar = findViewById<View>(R.id.toolbar) as Toolbar
-        setSupportActionBar(toolbar)
-        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         viewPager = findViewById<View>(R.id.viewpager) as ViewPager
+        setupToolBar()
         val adapter = ViewPagerAdapter(supportFragmentManager)
         viewPager!!.adapter = adapter
         tabLayout = findViewById<View>(R.id.tabs) as TabLayout
         tabLayout!!.setupWithViewPager(viewPager)
     }
+
+    private fun setupToolBar(){
+        toolbar = findViewById<View>(R.id.toolbar) as Toolbar
+        toolbar!!.setNavigationIcon(android.R.drawable.ic_menu_close_clear_cancel)
+        setSupportActionBar(toolbar)
+        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return false
+    }
+
+
 
 
     override fun onDestroy() {

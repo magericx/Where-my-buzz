@@ -1,6 +1,7 @@
 package com.example.wheremybuzz.module
 
 import com.example.wheremybuzz.BuildConfig
+import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.api.*
 import dagger.Module
 import dagger.Provides
@@ -98,4 +99,5 @@ class ApplicationModule {
     @Provides
     @Singleton
     fun provideApiHelper(apiHelper: ApiHelperImpl): ApiHelper = apiHelper
+
 }

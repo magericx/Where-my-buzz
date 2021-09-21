@@ -8,7 +8,6 @@ import androidx.fragment.app.FragmentPagerAdapter
 
 internal class ViewPagerAdapter(manager: FragmentManager?) :
     FragmentPagerAdapter(manager!!, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
-    //private val title = arrayOf("Favourite stops", "Nearest stops")
     private val title = arrayOf("Nearest stops", "Favourite stops")
     override fun getItem(position: Int): Fragment {
         return when (position) {
