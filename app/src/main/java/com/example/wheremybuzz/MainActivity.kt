@@ -46,9 +46,6 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
-
-
-
     override fun onDestroy() {
         super.onDestroy()
         tabLayout = null
