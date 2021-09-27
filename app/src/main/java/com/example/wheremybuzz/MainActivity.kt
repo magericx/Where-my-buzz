@@ -1,20 +1,20 @@
 package com.example.wheremybuzz
 
+import android.location.Location
 import android.os.Bundle
-import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.fragment.app.FragmentTransaction
 import androidx.viewpager.widget.ViewPager
+import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.ui.main.ViewPagerAdapter
-import com.facebook.shimmer.ShimmerFrameLayout
+import com.example.wheremybuzz.utils.helper.permission.LocationCallback
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), LocationCallback {
     private var toolbar: Toolbar? = null
     private var tabLayout: TabLayout? = null
     private var viewPager: ViewPager? = null
@@ -32,9 +32,14 @@ class MainActivity : AppCompatActivity() {
         viewPager!!.adapter = adapter
         tabLayout = findViewById<View>(R.id.tabs) as TabLayout
         tabLayout!!.setupWithViewPager(viewPager)
+
+        val fragmentTransaction: FragmentTransaction = supportFragmentManager.beginTransaction()
+        val newMapFragment = MapsFragment()
+        fragmentTransaction.add(R.id.fragment_map_container, newMapFragment)
+        fragmentTransaction.commit()
     }
 
-    private fun setupToolBar(){
+    private fun setupToolBar() {
         toolbar = findViewById<View>(R.id.toolbar) as Toolbar
         toolbar!!.setNavigationIcon(android.R.drawable.ic_menu_close_clear_cancel)
         setSupportActionBar(toolbar)
@@ -51,6 +56,12 @@ class MainActivity : AppCompatActivity() {
         tabLayout = null
         viewPager = null
         toolbar = null
+    }
+
+    override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
+        val mapFragment: MapsFragment =
+            supportFragmentManager.findFragmentById(R.id.fragment_map_container) as MapsFragment
+        mapFragment.updateOnResult(location = location, statusEnum = statusEnum)
     }
 
 }

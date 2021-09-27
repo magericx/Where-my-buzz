@@ -17,12 +17,9 @@ import androidx.annotation.Nullable
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.wheremybuzz.R
-//import com.example.wheremybuzz.ViewModelFactory
 import com.example.wheremybuzz.model.GeoLocation
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
@@ -30,7 +27,6 @@ import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.utils.helper.cache.CacheHelper
 import com.example.wheremybuzz.utils.helper.cache.CacheManager
 import com.example.wheremybuzz.utils.helper.intent.IntentHelper
-import com.example.wheremybuzz.utils.helper.network.NetworkUtil
 import com.example.wheremybuzz.utils.helper.permission.*
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
@@ -70,8 +66,7 @@ class TabFragment : Fragment() {
     private lateinit var swipeContainer: SwipeRefreshLayout
     private lateinit var expandableListAdapter: ExpandableListAdapter
     private lateinit var expandableListTitle: List<String>
-
-    //private lateinit var viewModel: BusStopsViewModel
+    
     private val viewModel: BusStopsViewModel by viewModels()
 
     private lateinit var sharedPreference: SharedPreferenceHelper
@@ -81,7 +76,6 @@ class TabFragment : Fragment() {
     private var errorView: ErrorView? = null
     var numberOfTries = 0
     private var isPermissionDialogActive: Boolean = false
-
     private lateinit var locationServicesHelper: LocationServicesHelper
 
     private val requestMultiplePermissions =
@@ -108,21 +102,8 @@ class TabFragment : Fragment() {
         override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
             when (statusEnum) {
                 StatusEnum.Success -> {
-                    var tempLatitude = 0.0
-                    var tempLongitude = 0.0
-                    location.let {
-                        it?.latitude?.let { latitude ->
-                            tempLatitude = latitude
-                        }
-                        it?.longitude?.let { longitude ->
-                            tempLongitude = longitude
-                        }
-                    }
-                    observeNearestBusStopsModel(
-                        GeoLocation(
-                            latitude = tempLatitude,
-                            longitude = tempLongitude
-                        )
+                    loadComponents(
+                        location
                     )
                 }
                 StatusEnum.NoPermission -> {
@@ -338,6 +319,30 @@ class TabFragment : Fragment() {
         expandableListView?.setAdapter(expandableListAdapter)
     }
 
+    private fun loadComponents(location: Location?) {
+        location?.let{
+            (requireActivity() as LocationCallback).updateOnResult(location, StatusEnum.Success)
+            var tempLatitude: Double
+            var tempLongitude: Double
+            //TODO remove mocked location
+            location.let {
+                it.latitude.let { latitude ->
+                    tempLatitude = latitude
+                }
+                it.longitude.let { longitude ->
+                    tempLongitude = longitude
+                }
+            }
+            observeNearestBusStopsModel(
+                GeoLocation(
+                    latitude = tempLatitude,
+                    longitude = tempLongitude
+                )
+            )
+        }
+    }
+
+
     private fun observeNearestBusStopsModel(location: GeoLocation) {
         Log.d(TAG, "Call nearest bus stop API ")
         // Update the list when the data changes
@@ -374,7 +379,7 @@ class TabFragment : Fragment() {
     }
 
     private fun refreshExpandedList(swipeRefresh: Boolean) {
-        val list: HashMap<String, String>? = getCurrentExpandedList()
+        val list: HashMap<String, String> = getCurrentExpandedList()
         if (!list.isNullOrEmpty()) {
             Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
             viewModel.refreshExpandedBusStops(list, object : StatusCallBack {
@@ -400,7 +405,7 @@ class TabFragment : Fragment() {
     }
 
     //method that will check for the expanded items and add into hashmap <busStopCode,busStopName>
-    private fun getCurrentExpandedList(): HashMap<String, String>? {
+    private fun getCurrentExpandedList(): HashMap<String, String> {
         val groupCount = expandableListAdapter.groupCount
         Log.d(TAG, "total number of group count $groupCount")
         val visibleExpandedList: HashMap<String, String> = hashMapOf()
@@ -444,7 +449,7 @@ class TabFragment : Fragment() {
 
     override fun onPause() {
         Log.d(TAG, "onPause is called")
-        if (swipeContainer.isRefreshing){
+        if (swipeContainer.isRefreshing) {
             swipeContainer.isRefreshing = false
             allowRefresh = true
         }
@@ -474,4 +479,5 @@ class TabFragment : Fragment() {
         )
         isPermissionDialogActive = true
     }
+
 }

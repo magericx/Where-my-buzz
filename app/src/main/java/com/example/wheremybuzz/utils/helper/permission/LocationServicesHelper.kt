@@ -58,6 +58,7 @@ class LocationServicesHelper(activity: Activity) {
 
     @SuppressLint("MissingPermission")
     fun retrieveLastLocation(locationCallback: LocationCallback) {
+        //TODO remove mocked location
         executorService2?.submit {
             locationServices.lastLocation
                 .addOnSuccessListener { location: Location? ->

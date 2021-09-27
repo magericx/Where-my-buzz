@@ -40,8 +40,8 @@
         android:orientation="vertical"
         android:layout_weight="0.9">
 
-        <include
-            layout="@layout/activity_maps"
+        <FrameLayout
+            android:id="@+id/fragment_map_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="0.5"
