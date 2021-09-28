@@ -91,15 +91,12 @@ class BusStopsViewModel @Inject constructor(
         }
     }
 
-    private fun setBusStopCodeInExpendableListDetail(key: String, busStopCode: String) {
-        Log.d(TAG, "setBusStopCodeInExpendableListDetail here")
-        if (expandableNearestListDetail.containsKey(key)) {
-            val oldValue = expandableNearestListDetail[key]
-            oldValue?.get(0)?.BusStopCode = busStopCode
-            oldValue?.let {
-                expandableNearestListDetail[key] = it
-            }
-        }
+    //TODO update expandableListDetail
+    fun updateExpandableNearestListDetail(){
+        //Step 1 - putAll original hashmap + new hashmap, end result (merged hashmap with both original hashmap and new hashmap
+        //step 2 - Check if combined hashmap contains (key) that exists in new hashmap, if does not contain key, remove it
+        //end result
+
     }
 
     //Implementation for services

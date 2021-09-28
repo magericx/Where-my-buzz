@@ -5,10 +5,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.wheremybuzz.model.StatusEnum
-import com.example.wheremybuzz.utils.helper.permission.LocationCallback
+import com.example.wheremybuzz.utils.helper.permission.ILocationCallback
+import com.example.wheremybuzz.utils.helper.permission.LocationListener
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -21,7 +21,7 @@ import dagger.hilt.android.scopes.FragmentScoped
 
 @AndroidEntryPoint
 @FragmentScoped
-class MapsFragment : Fragment(), OnMapReadyCallback, LocationCallback {
+class MapsFragment : Fragment(), OnMapReadyCallback, ILocationCallback {
 
     private lateinit var mMap: GoogleMap
     private lateinit var mapView: MapView
@@ -91,7 +91,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback, LocationCallback {
             updateMarkerLocation(currentLocation)
 //            activity?.let {
 //                Toast.makeText(
-//                    it.applicationContext, "Received location here in tabFragment",
+//                    it.applicationContext, "Received location here in mapFragment",
 //                    Toast.LENGTH_SHORT
 //                ).show()
 //            }
@@ -125,13 +125,15 @@ class MapsFragment : Fragment(), OnMapReadyCallback, LocationCallback {
 
             override fun onMarkerDragEnd(marker: Marker) {
                 updateCameraView(marker.position)
-                activity?.let {
-                    Toast.makeText(
-                        it.applicationContext,
-                        "New location of marker is ${marker.position.latitude} + ${marker.position.longitude}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+//                activity?.let {
+//                    Toast.makeText(
+//                        it.applicationContext,
+//                        "New location of marker is ${marker.position.latitude} + ${marker.position.longitude}",
+//                        Toast.LENGTH_SHORT
+//                    ).show()
+//                }
+                val location = com.example.wheremybuzz.model.Location(marker.position.latitude,marker.position.longitude)
+                (requireActivity() as LocationListener).updateOnResult(location)
             }
         })
     }

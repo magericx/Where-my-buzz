@@ -19,6 +19,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.model.GeoLocation
 import com.example.wheremybuzz.model.StatusEnum
@@ -42,7 +43,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 @FragmentScoped
-class TabFragment : Fragment() {
+class TabFragment : Fragment(), LocationListener {
 
     companion object {
         private const val firstIndex: Int = 0
@@ -66,7 +67,7 @@ class TabFragment : Fragment() {
     private lateinit var swipeContainer: SwipeRefreshLayout
     private lateinit var expandableListAdapter: ExpandableListAdapter
     private lateinit var expandableListTitle: List<String>
-    
+
     private val viewModel: BusStopsViewModel by viewModels()
 
     private lateinit var sharedPreference: SharedPreferenceHelper
@@ -89,7 +90,7 @@ class TabFragment : Fragment() {
                 showPermissionDialog()
                 return@registerForActivityResult
             }
-            locationServicesHelper.retrieveLastLocation(locationCallback)
+            locationServicesHelper.retrieveLastLocation(ILocationCallback)
         }
 
     private fun handlePermissionResponse(permissionArray: Array<String>?) {
@@ -98,7 +99,7 @@ class TabFragment : Fragment() {
         }
     }
 
-    private var locationCallback: LocationCallback = object : LocationCallback {
+    private var ILocationCallback: ILocationCallback = object : ILocationCallback {
         override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
             when (statusEnum) {
                 StatusEnum.Success -> {
@@ -162,7 +163,7 @@ class TabFragment : Fragment() {
                 sharedPreference.setTimeSharedPreference()
             }
 
-            handlePermissionResponse(locationServicesHelper.checkForLastLocation(locationCallback))
+            handlePermissionResponse(locationServicesHelper.checkForLastLocation(ILocationCallback))
         }
     }
 
@@ -320,8 +321,9 @@ class TabFragment : Fragment() {
     }
 
     private fun loadComponents(location: Location?) {
-        location?.let{
-            (requireActivity() as LocationCallback).updateOnResult(location, StatusEnum.Success)
+        location?.let {
+            //TODO set status message according to values of location
+            (requireActivity() as ILocationCallback).updateOnResult(location, StatusEnum.Success)
             var tempLatitude: Double
             var tempLongitude: Double
             //TODO remove mocked location
@@ -436,7 +438,7 @@ class TabFragment : Fragment() {
                 setNavigationToExternalIntent()
                 handlePermissionResponse(
                     locationServicesHelper.checkForLastLocation(
-                        locationCallback
+                        ILocationCallback
                     )
                 )
             }
@@ -478,6 +480,14 @@ class TabFragment : Fragment() {
             dialogCallback
         )
         isPermissionDialogActive = true
+    }
+
+    override fun updateOnResult(location: com.example.wheremybuzz.model.Location?) {
+        Toast.makeText(
+            MyApplication.instance.applicationContext, "Received location here in tabFragment",
+            Toast.LENGTH_SHORT
+        ).show()
+
     }
 
 }

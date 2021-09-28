@@ -2,22 +2,26 @@ package com.example.wheremybuzz
 
 import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.FragmentTransaction
 import androidx.viewpager.widget.ViewPager
 import com.example.wheremybuzz.model.StatusEnum
+import com.example.wheremybuzz.ui.main.TabFragment
 import com.example.wheremybuzz.ui.main.ViewPagerAdapter
-import com.example.wheremybuzz.utils.helper.permission.LocationCallback
+import com.example.wheremybuzz.utils.helper.permission.ILocationCallback
+import com.example.wheremybuzz.utils.helper.permission.LocationListener
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity(), LocationCallback {
+class MainActivity : AppCompatActivity(), ILocationCallback, LocationListener {
     private var toolbar: Toolbar? = null
     private var tabLayout: TabLayout? = null
     private var viewPager: ViewPager? = null
+    private var viewPageAdapter: ViewPagerAdapter? = null
 
     companion object {
         const val TAG = "MainActivity"
@@ -28,8 +32,8 @@ class MainActivity : AppCompatActivity(), LocationCallback {
         setContentView(R.layout.activity_main)
         viewPager = findViewById<View>(R.id.viewpager) as ViewPager
         setupToolBar()
-        val adapter = ViewPagerAdapter(supportFragmentManager)
-        viewPager!!.adapter = adapter
+        viewPageAdapter = ViewPagerAdapter(supportFragmentManager)
+        viewPager!!.adapter = viewPageAdapter
         tabLayout = findViewById<View>(R.id.tabs) as TabLayout
         tabLayout!!.setupWithViewPager(viewPager)
 
@@ -56,6 +60,7 @@ class MainActivity : AppCompatActivity(), LocationCallback {
         tabLayout = null
         viewPager = null
         toolbar = null
+        viewPageAdapter = null
     }
 
     override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
@@ -63,5 +68,11 @@ class MainActivity : AppCompatActivity(), LocationCallback {
             supportFragmentManager.findFragmentById(R.id.fragment_map_container) as MapsFragment
         mapFragment.updateOnResult(location = location, statusEnum = statusEnum)
     }
+
+    override fun updateOnResult(location: com.example.wheremybuzz.model.Location?) {
+        Log.d(TAG,"Recorded updated location here")
+        viewPageAdapter?.updateOnResult(location)
+    }
+
 
 }

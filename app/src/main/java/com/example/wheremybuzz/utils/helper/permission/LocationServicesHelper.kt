@@ -38,7 +38,7 @@ class LocationServicesHelper(activity: Activity) {
 
     @RequiresApi(Build.VERSION_CODES.M)
     fun checkForLastLocation(
-        locationCallback: LocationCallback
+        ILocationCallback: ILocationCallback
     ): Array<String>? {
         try {
             val locationPermission: Boolean = LocationPermissionHelper.checkLocationPermission()
@@ -47,17 +47,17 @@ class LocationServicesHelper(activity: Activity) {
                 return requestForLocationPermission()
             } else {
                 Log.d(TAG, "requestForLastLocation Permission here")
-                retrieveLastLocation(locationCallback)
+                retrieveLastLocation(ILocationCallback)
             }
         } catch (e: Exception) {
             Log.d(TAG, "Encountered exception due to $e")
-            locationCallback.updateOnResult(null, StatusEnum.UnknownError)
+            ILocationCallback.updateOnResult(null, StatusEnum.UnknownError)
         }
         return null
     }
 
     @SuppressLint("MissingPermission")
-    fun retrieveLastLocation(locationCallback: LocationCallback) {
+    fun retrieveLastLocation(ILocationCallback: ILocationCallback) {
         //TODO remove mocked location
         executorService2?.submit {
             locationServices.lastLocation
@@ -67,15 +67,15 @@ class LocationServicesHelper(activity: Activity) {
                         //if latitude and longitude == 0.0, means location services is not granted permmission
                         Log.d(TAG, "#2 Passed in location here is $location")
                         if (it.latitude != 0.0 && it.longitude != 0.0 || checkLocationServicesEnabled()) {
-                            locationCallback.updateOnResult(it, StatusEnum.Success)
+                            ILocationCallback.updateOnResult(it, StatusEnum.Success)
                             return@addOnSuccessListener
                         }
                     }
-                    locationCallback.updateOnResult(null, StatusEnum.NoPermission)
+                    ILocationCallback.updateOnResult(null, StatusEnum.NoPermission)
                 }
                 .addOnFailureListener {
                     Log.d(TAG, "Encountered exception due to $it")
-                    locationCallback.updateOnResult(null, StatusEnum.UnknownError)
+                    ILocationCallback.updateOnResult(null, StatusEnum.UnknownError)
                 }
         }
     }
@@ -97,7 +97,10 @@ class LocationServicesHelper(activity: Activity) {
     }
 }
 
-interface LocationCallback {
+interface ILocationCallback {
     fun updateOnResult(location: Location?, statusEnum: StatusEnum)
 }
 
+interface LocationListener {
+    fun updateOnResult(location: com.example.wheremybuzz.model.Location?)
+}
