@@ -25,13 +25,14 @@ import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceMan
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.facebook.shimmer.ShimmerFrameLayout
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import javax.inject.Inject
 
 
-class CustomExpandableListAdapter @Inject constructor (
-    private val context: Context, private val expandableListTitle: List<String>,
-    private val expandableListDetail: HashMap<String, MutableList<StoredBusMeta>>
+class CustomExpandableListAdapter @Inject constructor(
+    private val context: Context, private var expandableListTitle: List<String>,
+    private var expandableListDetail: ConcurrentHashMap<String, MutableList<StoredBusMeta>>
 ) : BaseExpandableListAdapter() {
     companion object {
         const val TAG = "CustomExpendableListAdapter"
@@ -45,6 +46,15 @@ class CustomExpandableListAdapter @Inject constructor (
     private val poolThread: ExecutorService = MyApplication.poolThread
     private val mainThread: Handler = MyApplication.mainThreadHandler
 
+
+    fun refreshExpandableList(
+        listDetail: ConcurrentHashMap<String, MutableList<StoredBusMeta>>,
+        listTitle: List<String>
+    ) {
+        this.expandableListDetail = listDetail
+        this.expandableListTitle = listTitle
+        notifyDataSetChanged()
+    }
 
     override fun getChild(listPosition: Int, expandedListPosition: Int): StoredBusMeta? {
         return expandableListDetail[expandableListTitle[listPosition]]

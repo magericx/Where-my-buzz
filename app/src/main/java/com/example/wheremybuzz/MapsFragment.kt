@@ -6,9 +6,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.utils.helper.permission.ILocationCallback
-import com.example.wheremybuzz.utils.helper.permission.LocationListener
+import com.example.wheremybuzz.viewModel.BusStopsViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -26,6 +27,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback, ILocationCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var mapView: MapView
     private val MAPVIEW_BUNDLE_KEY = "MapViewBundleKey"
+    private val viewModel: BusStopsViewModel by activityViewModels()
 
     companion object {
         private val TAG = "MapsFragment"
@@ -125,15 +127,9 @@ class MapsFragment : Fragment(), OnMapReadyCallback, ILocationCallback {
 
             override fun onMarkerDragEnd(marker: Marker) {
                 updateCameraView(marker.position)
-//                activity?.let {
-//                    Toast.makeText(
-//                        it.applicationContext,
-//                        "New location of marker is ${marker.position.latitude} + ${marker.position.longitude}",
-//                        Toast.LENGTH_SHORT
-//                    ).show()
-//                }
                 val location = com.example.wheremybuzz.model.Location(marker.position.latitude,marker.position.longitude)
-                (requireActivity() as LocationListener).updateOnResult(location)
+                //(requireActivity() as LocationListener).updateOnResult(location)
+                viewModel.updateExpandableNearestListDetailNewLocation(location)
             }
         })
     }

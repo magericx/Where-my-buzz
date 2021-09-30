@@ -41,9 +41,7 @@ class BusStopCodeRepository @Inject constructor(
         busStopName: String,
         latitude: Double,
         longtitude: Double,
-        viewModelCallBack: (BusStopCode) -> Unit
-    ) {
-        var found = false
+    ): BusStopCode? {
         val cacheData: BusStopsCodeResponse? = busStopCodeTempCache ?: cacheHelper.readJSONFile()
         if (cacheData != null) {
             for (i in cacheData.value.indices) {
@@ -60,15 +58,12 @@ class BusStopCodeRepository @Inject constructor(
                             TAG,
                             "Found bus stop code is " + cacheData.value[i].BusStopCode + " for bus stop " + busStopName
                         )
-                        viewModelCallBack(BusStopCode(cacheData.value[i].BusStopCode))
-                        found = true
-                        break
+                        return BusStopCode(cacheData.value[i].BusStopCode)
                     }
                 }
             }
-            //if busStopCode not found, return ""
-            viewModelCallBack(BusStopCode(""))
         }
+        return null
     }
 
     fun searchForBusStopCode(

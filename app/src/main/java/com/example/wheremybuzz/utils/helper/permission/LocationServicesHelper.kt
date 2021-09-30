@@ -100,7 +100,3 @@ class LocationServicesHelper(activity: Activity) {
 interface ILocationCallback {
     fun updateOnResult(location: Location?, statusEnum: StatusEnum)
 }
-
-interface LocationListener {
-    fun updateOnResult(location: com.example.wheremybuzz.model.Location?)
-}

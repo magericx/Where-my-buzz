@@ -11,6 +11,7 @@ import android.widget.ExpandableListView
 import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -50,7 +51,7 @@ class FavouriteFragment : Fragment() {
 
     var sharedPreference: SharedPreferenceHelper =
         SharedPreferenceManager.getFavouriteSharedPreferenceHelper
-    private val viewModel: BusStopsViewModel by viewModels()
+    private val viewModel: BusStopsViewModel by activityViewModels()
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     private lateinit var expandableListView: ExpandableListView
     private lateinit var swipeContainer: SwipeRefreshLayout

@@ -8,17 +8,18 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
+import com.example.wheremybuzz.enum.FragmentType
 import com.example.wheremybuzz.model.*
 import com.example.wheremybuzz.model.callback.BusScheduleMetaCallBack
 import com.example.wheremybuzz.model.callback.StatusCallBack
 import com.example.wheremybuzz.repository.BusScheduleRepository
 import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import com.example.wheremybuzz.enum.FragmentType
 import com.example.wheremybuzz.utils.helper.network.NetworkUtil
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import javax.inject.Inject
 
@@ -32,7 +33,7 @@ class BusStopsViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        private val TAG = "NearestBusStopsView"
+        private val TAG = "ViewModel"
     }
 
     lateinit var nearestBusStopsGeoListObservable: MutableLiveData<StatusEnum>
@@ -40,8 +41,10 @@ class BusStopsViewModel @Inject constructor(
     var executorService: ExecutorService = MyApplication.poolThread
     var executorService2: ExecutorService = MyApplication.poolThread2
 
-    var expandableNearestListDetail: HashMap<String, MutableList<StoredBusMeta>> = HashMap()
-    var expandableFavouriteListDetail: HashMap<String, MutableList<StoredBusMeta>> = HashMap()
+    var expandableNearestListDetail: ConcurrentHashMap<String, MutableList<StoredBusMeta>> =
+        ConcurrentHashMap()
+    var expandableFavouriteListDetail: ConcurrentHashMap<String, MutableList<StoredBusMeta>> =
+        ConcurrentHashMap()
     private lateinit var expandableNearestListAdapter: ExpandableListAdapter
     private lateinit var expandableFavouriteListAdapter: ExpandableListAdapter
     private lateinit var expandableNearestListTitle: List<String>
@@ -91,12 +94,84 @@ class BusStopsViewModel @Inject constructor(
         }
     }
 
-    //TODO update expandableListDetail
-    fun updateExpandableNearestListDetail(){
-        //Step 1 - putAll original hashmap + new hashmap, end result (merged hashmap with both original hashmap and new hashmap
-        //step 2 - Check if combined hashmap contains (key) that exists in new hashmap, if does not contain key, remove it
-        //end result
 
+    fun getBusStopCodeFromCache(
+        busStopCodeTempCache: BusStopsCodeResponse?,
+        busStopName: String,
+        latitude: Double,
+        longtitude: Double
+    ): String? {
+        return busStopCodeRepository.getBusStopCodeFromCache(
+            busStopCodeTempCache,
+            busStopName,
+            latitude,
+            longtitude
+        )?.busStopCode
+    }
+
+    //TODO update expandableListDetail
+    fun updateExpandableNearestListDetailNewLocation(location: Location) {
+        executorService2.submit {
+            nearestBusRepository.getNearestBusStops(
+                GeoLocation(
+                    latitude = location.lat,
+                    longitude = location.lng
+                )
+            ) {
+                if (!it.BusStopMetaList.isNullOrEmpty()) {
+                    val tempBusStopCodeList: MutableList<String> = mutableListOf()
+                    val nearestBusStopsList = it.BusStopMetaList
+                    Log.d(TAG, "Retrieved bus stop list is ${it.BusStopMetaList}")
+                    for (i in nearestBusStopsList.indices) {
+                        val tempBusStopName = nearestBusStopsList[i]!!.busStopName
+                        val busStopCode = getBusStopCodeFromCache(
+                            busStopCodeTempCache,
+                            tempBusStopName,
+                            nearestBusStopsList[i]!!.latitude,
+                            nearestBusStopsList[i]!!.longitude
+                        ) ?: continue
+                        val geoLocation = GeoLocation(
+                            nearestBusStopsList[i]!!.latitude,
+                            nearestBusStopsList[i]!!.longitude
+                        )
+                        //add into temp list here
+                        tempBusStopCodeList.add(tempBusStopName)
+
+                        //check and add busStops into hashmap if does not exists previously
+                        if (!expandableNearestListDetail.containsKey(tempBusStopName)) {
+                            val busStopArrayList: MutableList<StoredBusMeta> =
+                                mutableListOf(StoredBusMeta(busStopCode, geoLocation, null))
+                            Log.d(
+                                TAG,
+                                "Adding new fields into hashmap now $busStopArrayList of bus stop name ${tempBusStopName}"
+                            )
+                            setExpandableNearestListDetail(
+                                tempBusStopName,
+                                busStopArrayList
+                            )
+                        }
+                        //TODO add edge case where there can be 2 bus stops with the same name but different busCode
+                    }
+                    //remove all busStops that does not exists in the new returned list from server
+                    val hashmapIterator = expandableNearestListDetail.keys.iterator()
+                    while (hashmapIterator.hasNext()) {
+                        val key = hashmapIterator.next()
+                        if (!tempBusStopCodeList.contains(key)) {
+                            Log.d(TAG, "Remove old fields from hashmap now $key")
+                            hashmapIterator.remove()
+                        }
+                    }
+                    MyApplication.mainThreadHandler.post {
+                        nearestBusStopsGeoListObservable.value = StatusEnum.ReloadAll
+                        setupNearestExpandableListTitle()
+                        (expandableNearestListAdapter as CustomExpandableListAdapter).refreshExpandableList(
+                            expandableNearestListDetail,
+                            expandableNearestListTitle
+                        )
+                    }
+                }
+            }
+        }
     }
 
     //Implementation for services
@@ -105,8 +180,7 @@ class BusStopsViewModel @Inject constructor(
         serviceList: List<Service>,
         fragmentType: FragmentType
     ) {
-        //Log.d(TAG, "expandableListDetails is $expandableListDetail")
-        val expandableListDetail: HashMap<String, MutableList<StoredBusMeta>> =
+        val expandableListDetail: ConcurrentHashMap<String, MutableList<StoredBusMeta>> =
             if (fragmentType == FragmentType.NEAREST) expandableNearestListDetail else expandableFavouriteListDetail
         if (expandableListDetail.containsKey(key)) {
             val currentExpandableHashMap = expandableListDetail[key]
@@ -195,27 +269,24 @@ class BusStopsViewModel @Inject constructor(
                     val nearestBusStopsList = it.BusStopMetaList
                     for (i in it.BusStopMetaList.indices) {
                         val busStopArrayList: MutableList<StoredBusMeta> = ArrayList()
-                        val geoLocation = GeoLocation(
-                            nearestBusStopsList[i]!!.latitude,
-                            nearestBusStopsList[i]!!.longitude
-                        )
-                        busStopCodeRepository.getBusStopCodeFromCache(
+                        val busStopCode = getBusStopCodeFromCache(
                             busStopCodeTempCache,
                             nearestBusStopsList[i]!!.busStopName,
                             nearestBusStopsList[i]!!.latitude,
                             nearestBusStopsList[i]!!.longitude
-                        ) { busStopCode ->
-                            if (busStopCode.busStopCode.isNotEmpty()) {
-                                Log.d(TAG, "Bus stop code is retrieved here ")
-                                val finalBusMeta =
-                                    StoredBusMeta(busStopCode.busStopCode, geoLocation, null)
-                                busStopArrayList.add(finalBusMeta)
-                                setExpandableNearestListDetail(
-                                    nearestBusStopsList[i]!!.busStopName,
-                                    busStopArrayList
-                                )
-                            }
-                        }
+                        ) ?: continue
+                        Log.d(TAG, "Bus stop code is retrieved here ")
+                        val geoLocation = GeoLocation(
+                            nearestBusStopsList[i]!!.latitude,
+                            nearestBusStopsList[i]!!.longitude
+                        )
+                        val finalBusMeta =
+                            StoredBusMeta(busStopCode, geoLocation, null)
+                        busStopArrayList.add(finalBusMeta)
+                        setExpandableNearestListDetail(
+                            nearestBusStopsList[i]!!.busStopName,
+                            busStopArrayList
+                        )
                     }
                     nearestBusStopsGeoListObservable.postValue(StatusEnum.Success)
                 } else {
@@ -268,7 +339,7 @@ class BusStopsViewModel @Inject constructor(
         executorService.submit {
             Log.d(TAG, "Current thread executing is ${Thread.currentThread().name}")
             //callback method
-            val details: HashMap<String, MutableList<StoredBusMeta>> =
+            val details: ConcurrentHashMap<String, MutableList<StoredBusMeta>> =
                 if (fragmentType == FragmentType.NEAREST) {
                     expandableNearestListDetail
                 } else {

@@ -2,22 +2,19 @@ package com.example.wheremybuzz
 
 import android.location.Location
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.FragmentTransaction
 import androidx.viewpager.widget.ViewPager
 import com.example.wheremybuzz.model.StatusEnum
-import com.example.wheremybuzz.ui.main.TabFragment
 import com.example.wheremybuzz.ui.main.ViewPagerAdapter
 import com.example.wheremybuzz.utils.helper.permission.ILocationCallback
-import com.example.wheremybuzz.utils.helper.permission.LocationListener
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity(), ILocationCallback, LocationListener {
+class MainActivity : AppCompatActivity(), ILocationCallback {
     private var toolbar: Toolbar? = null
     private var tabLayout: TabLayout? = null
     private var viewPager: ViewPager? = null
@@ -69,10 +66,6 @@ class MainActivity : AppCompatActivity(), ILocationCallback, LocationListener {
         mapFragment.updateOnResult(location = location, statusEnum = statusEnum)
     }
 
-    override fun updateOnResult(location: com.example.wheremybuzz.model.Location?) {
-        Log.d(TAG,"Recorded updated location here")
-        viewPageAdapter?.updateOnResult(location)
-    }
 
 
 }

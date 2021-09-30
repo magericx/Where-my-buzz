@@ -4,7 +4,8 @@ enum class StatusEnum{
     NetworkError,
     Success,
     UnknownError,
-    NoPermission
+    NoPermission,
+    ReloadAll
 }
 
 enum class PermissionEnum{

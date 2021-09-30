@@ -93,6 +93,7 @@ class SharedPreferenceHelper(
 
     fun checkIfListIsEmpty(): Boolean {
         val tempString = sharedPreference.getString(this.preferenceKeyName, "") ?: return true
+        if (tempString.isEmpty()) return true
         tempString.let{
             val mapString: Map<String, String> = convertToMap(it)
             return mapString.isEmpty()

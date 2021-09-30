@@ -2,7 +2,6 @@ package com.example.wheremybuzz.utils.helper.permission
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.DownloadManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -10,10 +9,8 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import com.example.wheremybuzz.LocationConstants
 import com.example.wheremybuzz.MyApplication
-import com.example.wheremybuzz.model.PermissionEnum
-import com.example.wheremybuzz.ui.main.TabFragment
-import java.lang.ref.WeakReference
 
+@SuppressLint("StaticFieldLeak")
 object LocationPermissionHelper {
 
     const val TAG = "LocationHelper"
@@ -51,10 +48,3 @@ object LocationPermissionHelper {
     }
 }
 
-interface RequestPermissionCallback {
-    fun updateOnResult(requestStatus: RequestStatus)
-}
-
-data class RequestStatus(
-    val permissionType: PermissionEnum
-)

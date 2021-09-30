@@ -16,11 +16,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.Nullable
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.example.wheremybuzz.MyApplication
 import com.example.wheremybuzz.R
+import com.example.wheremybuzz.enum.FragmentType
 import com.example.wheremybuzz.model.GeoLocation
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.model.StoredBusMeta
@@ -37,13 +37,12 @@ import com.example.wheremybuzz.view.DialogListener
 import com.example.wheremybuzz.view.ErrorView
 import com.example.wheremybuzz.viewModel.BusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
-import dagger.hilt.android.scopes.FragmentScoped
-import com.example.wheremybuzz.enum.FragmentType
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.scopes.FragmentScoped
 
 @AndroidEntryPoint
 @FragmentScoped
-class TabFragment : Fragment(), LocationListener {
+class TabFragment : Fragment() {
 
     companion object {
         private const val firstIndex: Int = 0
@@ -66,9 +65,7 @@ class TabFragment : Fragment(), LocationListener {
     var expandableListView: ExpandableListView? = null
     private lateinit var swipeContainer: SwipeRefreshLayout
     private lateinit var expandableListAdapter: ExpandableListAdapter
-    private lateinit var expandableListTitle: List<String>
-
-    private val viewModel: BusStopsViewModel by viewModels()
+    private val viewModel: BusStopsViewModel by activityViewModels()
 
     private lateinit var sharedPreference: SharedPreferenceHelper
     private lateinit var cacheHelper: CacheHelper
@@ -78,6 +75,7 @@ class TabFragment : Fragment(), LocationListener {
     var numberOfTries = 0
     private var isPermissionDialogActive: Boolean = false
     private lateinit var locationServicesHelper: LocationServicesHelper
+    private lateinit var expandedGrouplistView: ArrayList<Int>
 
     private val requestMultiplePermissions =
         registerForActivityResult(
@@ -179,7 +177,6 @@ class TabFragment : Fragment(), LocationListener {
             swipeContainer = parentView.findViewById(R.id.swipeContainer)
             enableShimmer()
             expandableListView = parentView.findViewById(R.id.expandableListView)
-            Log.d(TAG, "debug expendable $expandableListView")
         } else {
             errorView = activity?.let { fragmentActivity ->
                 container?.let {
@@ -245,37 +242,43 @@ class TabFragment : Fragment(), LocationListener {
     }
 
     private fun setListenersForOriginalView() {
+        expandedGrouplistView = arrayListOf()
         expandableListView?.apply {
             setOnGroupExpandListener { groupPosition ->
-                activity?.let {
-                    Toast.makeText(
-                        it.applicationContext,
-                        (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+                val expandableListTitle = viewModel.getNearestExpandableListTitle()
+//                activity?.let {
+//                    Toast.makeText(
+//                        it.applicationContext,
+//                        (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
+//                        Toast.LENGTH_SHORT
+//                    ).show()
+//                }
+                expandedGrouplistView.add(groupPosition)
                 //don't allow refresh if cell is expanding
                 allowRefresh = false
                 viewModel.getGeoLocationBasedOnBusStopName((expandableListTitle as ArrayList<String>)[groupPosition])
                 observeBusStopCodeModel(
-                    (expandableListTitle as ArrayList<String>)[groupPosition]
+                    expandableListTitle[groupPosition]
                 )
             }
             setOnGroupCollapseListener { groupPosition ->
-                activity?.let {
-                    Toast.makeText(
-                        it.applicationContext,
-                        (expandableListTitle as ArrayList<String>)[groupPosition] + " List Collapsed.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+                val expandableListTitle = viewModel.getNearestExpandableListTitle()
+//                activity?.let {
+//                    Toast.makeText(
+//                        it.applicationContext,
+//                        (expandableListTitle as ArrayList<String>)[groupPosition] + " List Collapsed.",
+//                        Toast.LENGTH_SHORT
+//                    ).show()
+//                }
+                expandedGrouplistView.remove(groupPosition)
             }
             setOnChildClickListener { parent, v, groupPosition, childPosition, id ->
+                val expandableListTitle = viewModel.getNearestExpandableListTitle()
                 activity?.let {
                     Toast.makeText(
                         it.applicationContext,
                         (expandableListTitle as ArrayList<String>)[groupPosition] + " -> "
-                                + viewModel.expandableNearestListDetail[(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
+                                + viewModel.expandableNearestListDetail[expandableListTitle[groupPosition]]!![childPosition],
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -316,7 +319,6 @@ class TabFragment : Fragment(), LocationListener {
     private fun createNearestExpandableListAdapter() {
         viewModel.setUpExpandableListAdapter(FragmentType.NEAREST)
         expandableListAdapter = viewModel.getExpandableNearestListAdapter()
-        expandableListTitle = viewModel.getNearestExpandableListTitle()
         expandableListView?.setAdapter(expandableListAdapter)
     }
 
@@ -358,11 +360,10 @@ class TabFragment : Fragment(), LocationListener {
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
-                        if (status == StatusEnum.Success) {
-                            createNearestExpandableListAdapter()
-                        } else {
-                            //Show error placeholder page
-                            showErrorPage()
+                        when (status){
+                            StatusEnum.Success -> createNearestExpandableListAdapter()
+                            StatusEnum.ReloadAll -> collapseExpandableGroupViews()
+                            else -> showErrorPage()
                         }
                         disableShimmer()
                     }
@@ -381,6 +382,12 @@ class TabFragment : Fragment(), LocationListener {
     }
 
     private fun refreshExpandedList(swipeRefresh: Boolean) {
+        if (expandedGrouplistView.isEmpty()) {
+            if (swipeRefresh) {
+                swipeContainer.isRefreshing = false
+            }
+            return
+        }
         val list: HashMap<String, String> = getCurrentExpandedList()
         if (!list.isNullOrEmpty()) {
             Log.d(TAG, "List of bus stop code that requires re-fetch are $list")
@@ -398,36 +405,36 @@ class TabFragment : Fragment(), LocationListener {
                     }
                 }
             }, FragmentType.NEAREST)
-        } else {
-            if (swipeRefresh) {
-                swipeContainer.isRefreshing = false
-            }
         }
-
     }
 
     //method that will check for the expanded items and add into hashmap <busStopCode,busStopName>
     private fun getCurrentExpandedList(): HashMap<String, String> {
-        val groupCount = expandableListAdapter.groupCount
-        Log.d(TAG, "total number of group count $groupCount")
         val visibleExpandedList: HashMap<String, String> = hashMapOf()
-        for (i in 0 until groupCount) {
-            val expanded = expandableListView?.isGroupExpanded(i) ?: false
-            Log.d(TAG, "group position number $i is $expanded")
-            if (expanded) {
-                val busStopCode = (expandableListAdapter.getChild(
-                    i, firstIndex
-                ) as StoredBusMeta).BusStopCode
-                val busStopName = (expandableListAdapter.getGroup(
-                    i
-                )
-                        ).toString()
-                if (busStopCode.isNotEmpty() && busStopName.isNotEmpty()) {
-                    visibleExpandedList[busStopCode] = busStopName
-                }
+        expandedGrouplistView.forEach {
+            val busStopCode = (expandableListAdapter.getChild(
+                it, firstIndex
+            ) as StoredBusMeta).BusStopCode
+            val busStopName = (expandableListAdapter.getGroup(
+                it
+            )
+                    ).toString()
+            if (busStopCode.isNotEmpty() && busStopName.isNotEmpty()) {
+                visibleExpandedList[busStopCode] = busStopName
             }
         }
         return visibleExpandedList
+    }
+
+    //method to collapse all the expanded groups
+    private fun collapseExpandableGroupViews(){
+        //copy first to prevent concurrent modification
+        val iterationList: ArrayList<Int> = arrayListOf()
+        iterationList.addAll(expandedGrouplistView)
+        for (item in iterationList){
+            Log.d(TAG, "Removing position $item}")
+            expandableListView?.collapseGroup(item)
+        }
     }
 
     override fun onResume() {
@@ -481,13 +488,4 @@ class TabFragment : Fragment(), LocationListener {
         )
         isPermissionDialogActive = true
     }
-
-    override fun updateOnResult(location: com.example.wheremybuzz.model.Location?) {
-        Toast.makeText(
-            MyApplication.instance.applicationContext, "Received location here in tabFragment",
-            Toast.LENGTH_SHORT
-        ).show()
-
-    }
-
 }
