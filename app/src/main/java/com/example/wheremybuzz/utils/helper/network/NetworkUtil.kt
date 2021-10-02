@@ -2,7 +2,6 @@ package com.example.wheremybuzz.utils.helper.network
 
 import android.content.Context
 import android.net.ConnectivityManager
-import com.example.wheremybuzz.MyApplication
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton

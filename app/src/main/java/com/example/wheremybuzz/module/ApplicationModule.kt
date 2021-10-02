@@ -1,11 +1,15 @@
 package com.example.wheremybuzz.module
 
+import android.app.Application
+import android.content.Context
 import com.example.wheremybuzz.BuildConfig
-import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.BusApplication
 import com.example.wheremybuzz.api.*
+import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -17,7 +21,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-class ApplicationModule {
+class ApplicationModule() {
 
     @Provides
     @Named("LTA_BASE_URL")
@@ -99,5 +103,19 @@ class ApplicationModule {
     @Provides
     @Singleton
     fun provideApiHelper(apiHelper: ApiHelperImpl): ApiHelper = apiHelper
+
+    @Provides
+    @Singleton
+    fun provideApplicationContext(): Context {
+        return BusApplication.instance.applicationContext
+    }
+
+    @Provides
+    @Singleton
+    fun provideSharedPreferenceManager(applicationContext: Context): SharedPreferenceManager {
+        return SharedPreferenceManager(applicationContext)
+    }
+
+
 
 }

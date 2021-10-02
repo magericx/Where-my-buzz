@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 @HiltAndroidApp
-class MyApplication : Application(), Application.ActivityLifecycleCallbacks {
+class BusApplication : Application(), Application.ActivityLifecycleCallbacks {
     override fun onCreate() {
         super.onCreate()
         registerActivityLifecycleCallbacks(this)
@@ -23,7 +23,7 @@ class MyApplication : Application(), Application.ActivityLifecycleCallbacks {
     }
     companion object {
         const val TAG = "MyApplication"
-        lateinit var instance: MyApplication
+        lateinit var instance: BusApplication
             private set
         lateinit var poolThread: ExecutorService
             private set

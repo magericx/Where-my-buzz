@@ -9,12 +9,12 @@ import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.ExpandableListView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.BusApplication
 import com.example.wheremybuzz.R
 import com.facebook.shimmer.ShimmerFrameLayout
 
 class NearestBusView(context: Context, view: ViewGroup){
-    var mContext:Context = MyApplication.instance.applicationContext
+    var mContext:Context = BusApplication.instance.applicationContext
     private val container = view
     lateinit var swipeContainer: SwipeRefreshLayout
     lateinit var shimmeringLayoutView: ShimmerFrameLayout

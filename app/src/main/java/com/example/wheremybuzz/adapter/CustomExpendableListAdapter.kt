@@ -17,14 +17,12 @@ import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.BusApplication
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.model.StoredBusMeta
-import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceHelper
 import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.facebook.shimmer.ShimmerFrameLayout
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import javax.inject.Inject
@@ -32,19 +30,18 @@ import javax.inject.Inject
 
 class CustomExpandableListAdapter @Inject constructor(
     private val context: Context, private var expandableListTitle: List<String>,
-    private var expandableListDetail: ConcurrentHashMap<String, MutableList<StoredBusMeta>>
+    private var expandableListDetail: ConcurrentHashMap<String, MutableList<StoredBusMeta>>,
+    private var sharedPreferenceManager: SharedPreferenceManager
 ) : BaseExpandableListAdapter() {
+
     companion object {
         const val TAG = "CustomExpendableListAdapter"
         const val shimmer = "shouldShimmer"
         const val shimmer2 = "noShimmer"
-        private val sharedPreference: SharedPreferenceHelper by lazy {
-            return@lazy SharedPreferenceManager.getFavouriteSharedPreferenceHelper
-        }
     }
 
-    private val poolThread: ExecutorService = MyApplication.poolThread
-    private val mainThread: Handler = MyApplication.mainThreadHandler
+    private val poolThread: ExecutorService = BusApplication.poolThread
+    private val mainThread: Handler = BusApplication.mainThreadHandler
 
 
     fun refreshExpandableList(
@@ -243,6 +240,7 @@ class CustomExpandableListAdapter @Inject constructor(
         busStopName: String,
         busStopCode: String
     ) {
+        val sharedPreference = sharedPreferenceManager.getFavouriteSharedPreferenceHelper
         poolThread.execute {
             if (sharedPreference.checkIfExistsInList(busStopCode)) {
                 mainThread.post {

@@ -6,7 +6,7 @@ import android.widget.ExpandableListAdapter
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.BusApplication
 import com.example.wheremybuzz.adapter.CustomExpandableListAdapter
 import com.example.wheremybuzz.enum.FragmentType
 import com.example.wheremybuzz.model.*
@@ -16,6 +16,7 @@ import com.example.wheremybuzz.repository.BusScheduleRepository
 import com.example.wheremybuzz.repository.BusStopCodeRepository
 import com.example.wheremybuzz.repository.NearestBusRepository
 import com.example.wheremybuzz.utils.helper.network.NetworkUtil
+import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.*
@@ -30,6 +31,7 @@ class BusStopsViewModel @Inject constructor(
     private val busScheduleRepository: BusScheduleRepository,
     private val busStopCodeRepository: BusStopCodeRepository,
     private val nearestBusRepository: NearestBusRepository,
+    private val sharedPreferenceManager: SharedPreferenceManager
 ) : ViewModel() {
 
     companion object {
@@ -38,8 +40,8 @@ class BusStopsViewModel @Inject constructor(
 
     lateinit var nearestBusStopsGeoListObservable: MutableLiveData<StatusEnum>
     lateinit var favouriteBusStopsGeoListObservable: MutableLiveData<StatusEnum>
-    var executorService: ExecutorService = MyApplication.poolThread
-    var executorService2: ExecutorService = MyApplication.poolThread2
+    var executorService: ExecutorService = BusApplication.poolThread
+    var executorService2: ExecutorService = BusApplication.poolThread2
 
     var expandableNearestListDetail: ConcurrentHashMap<String, MutableList<StoredBusMeta>> =
         ConcurrentHashMap()
@@ -161,7 +163,7 @@ class BusStopsViewModel @Inject constructor(
                             hashmapIterator.remove()
                         }
                     }
-                    MyApplication.mainThreadHandler.post {
+                    BusApplication.mainThreadHandler.post {
                         nearestBusStopsGeoListObservable.value = StatusEnum.ReloadAll
                         setupNearestExpandableListTitle()
                         (expandableNearestListAdapter as CustomExpandableListAdapter).refreshExpandableList(
@@ -211,7 +213,8 @@ class BusStopsViewModel @Inject constructor(
                 expandableNearestListAdapter = CustomExpandableListAdapter(
                     applicationContext,
                     expandableNearestListTitle,
-                    expandableNearestListDetail
+                    expandableNearestListDetail,
+                    sharedPreferenceManager
                 )
             }
             FragmentType.FAVOURITE -> {
@@ -219,7 +222,8 @@ class BusStopsViewModel @Inject constructor(
                 expandableFavouriteListAdapter = CustomExpandableListAdapter(
                     applicationContext,
                     expandableFavouriteListTitle,
-                    expandableFavouriteListDetail
+                    expandableFavouriteListDetail,
+                    sharedPreferenceManager
                 )
             }
         }

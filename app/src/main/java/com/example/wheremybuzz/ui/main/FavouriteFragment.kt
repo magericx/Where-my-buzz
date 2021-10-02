@@ -32,6 +32,7 @@ import com.example.wheremybuzz.enum.FragmentType
 import com.example.wheremybuzz.utils.helper.intent.IntentHelper
 import dagger.hilt.EntryPoint
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 @FragmentScoped
@@ -49,8 +50,12 @@ class FavouriteFragment : Fragment() {
         }
     }
 
-    var sharedPreference: SharedPreferenceHelper =
-        SharedPreferenceManager.getFavouriteSharedPreferenceHelper
+    @Inject
+    lateinit var sharedPreferenceManager: SharedPreferenceManager
+
+
+    private lateinit var sharedPreference: SharedPreferenceHelper
+        //sharedPreferenceManager.getFavouriteSharedPreferenceHelper
     private val viewModel: BusStopsViewModel by activityViewModels()
     var shimmeringLayoutView: ShimmerFrameLayout? = null
     private lateinit var expandableListView: ExpandableListView
@@ -75,6 +80,7 @@ class FavouriteFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         Log.d(TAG, "Invoke here again")
+        this.sharedPreference = sharedPreferenceManager.getFavouriteSharedPreferenceHelper
         if (viewModel.getNetworkConnection(cache = false)
                 .and(sharedPreference.checkIfListIsEmpty().not())
         ) {

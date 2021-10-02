@@ -1,4 +1,4 @@
-package com.example.wheremybuzz
+package com.example.wheremybuzz.ui.main
 
 import android.location.Location
 import android.os.Bundle
@@ -7,8 +7,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.FragmentTransaction
 import androidx.viewpager.widget.ViewPager
+import com.example.wheremybuzz.R
 import com.example.wheremybuzz.model.StatusEnum
-import com.example.wheremybuzz.ui.main.ViewPagerAdapter
 import com.example.wheremybuzz.utils.helper.permission.ILocationCallback
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint

@@ -8,7 +8,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import com.example.wheremybuzz.LocationConstants
-import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.BusApplication
 
 @SuppressLint("StaticFieldLeak")
 object LocationPermissionHelper {
@@ -17,7 +17,7 @@ object LocationPermissionHelper {
     const val MY_PERMISSIONS_REQUEST_LOCATION =
         LocationConstants.MY_PERMISSIONS_REQUEST_LOCATION
 
-    private val mContext: Context = MyApplication.instance.applicationContext
+    private val mContext: Context = BusApplication.instance.applicationContext
 
     @SuppressLint("InlinedApi")
     val advancedLocationPermission: Array<String> = arrayOf(

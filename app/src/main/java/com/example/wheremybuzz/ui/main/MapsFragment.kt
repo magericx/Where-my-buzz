@@ -1,4 +1,4 @@
-package com.example.wheremybuzz
+package com.example.wheremybuzz.ui.main
 
 import android.location.Location
 import android.os.Bundle
@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.example.wheremybuzz.R
 import com.example.wheremybuzz.model.StatusEnum
 import com.example.wheremybuzz.utils.helper.permission.ILocationCallback
 import com.example.wheremybuzz.viewModel.BusStopsViewModel

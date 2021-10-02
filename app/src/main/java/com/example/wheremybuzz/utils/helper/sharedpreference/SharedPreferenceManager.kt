@@ -2,15 +2,19 @@ package com.example.wheremybuzz.utils.helper.sharedpreference
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.BusApplication
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 
-object SharedPreferenceManager {
-    private val context: Context = MyApplication.instance.applicationContext
-    private const val preferenceFilename = "busStopCodesConfig"
-    private const val preferenceKeyName = "lastFetchedCache"
-    private const val favouritePreferenceFilename = "favouriteBusStopsConfig"
-    private const val favouritePreferenceKeyName = "favouriteBusStops"
+class SharedPreferenceManager @Inject constructor(private val context: Context) {
+
+    companion object {
+        private const val preferenceFilename = "busStopCodesConfig"
+        private const val preferenceKeyName = "lastFetchedCache"
+        private const val favouritePreferenceFilename = "favouriteBusStopsConfig"
+        private const val favouritePreferenceKeyName = "favouriteBusStops"
+    }
 
     private val sharedPreferences: SharedPreferences by lazy {
         return@lazy context.getSharedPreferences(

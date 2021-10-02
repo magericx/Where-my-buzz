@@ -39,6 +39,7 @@ import com.example.wheremybuzz.viewModel.BusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.scopes.FragmentScoped
+import javax.inject.Inject
 
 @AndroidEntryPoint
 @FragmentScoped
@@ -67,12 +68,13 @@ class TabFragment : Fragment() {
     private lateinit var expandableListAdapter: ExpandableListAdapter
     private val viewModel: BusStopsViewModel by activityViewModels()
 
+
+    @Inject lateinit var sharedPreferenceManager: SharedPreferenceManager
     private lateinit var sharedPreference: SharedPreferenceHelper
     private lateinit var cacheHelper: CacheHelper
     private var allowRefresh = false
     lateinit var parentView: View
     private var errorView: ErrorView? = null
-    var numberOfTries = 0
     private var isPermissionDialogActive: Boolean = false
     private lateinit var locationServicesHelper: LocationServicesHelper
     private lateinit var expandedGrouplistView: ArrayList<Int>
@@ -88,7 +90,7 @@ class TabFragment : Fragment() {
                 showPermissionDialog()
                 return@registerForActivityResult
             }
-            locationServicesHelper.retrieveLastLocation(ILocationCallback)
+            locationServicesHelper.retrieveLastLocation(iLocationCallback)
         }
 
     private fun handlePermissionResponse(permissionArray: Array<String>?) {
@@ -97,7 +99,7 @@ class TabFragment : Fragment() {
         }
     }
 
-    private var ILocationCallback: ILocationCallback = object : ILocationCallback {
+    private var iLocationCallback: ILocationCallback = object : ILocationCallback {
         override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
             when (statusEnum) {
                 StatusEnum.Success -> {
@@ -127,11 +129,7 @@ class TabFragment : Fragment() {
         }
 
         override fun onCancel(status: StatusEnum) {
-            numberOfTries += 1
-            handlePermissionResponse(
-                locationServicesHelper.requestForLocationPermission(
-                )
-            )
+            showErrorPage()
             isPermissionDialogActive = false
         }
     }
@@ -144,7 +142,7 @@ class TabFragment : Fragment() {
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        this.sharedPreference = SharedPreferenceManager.getSharedPreferenceHelper
+        this.sharedPreference = sharedPreferenceManager.getSharedPreferenceHelper
         locationServicesHelper = LocationServicesHelper(this.activity as Activity)
         if (viewModel.getNetworkConnection()) {
             // check if busStopCode is empty or missing, retrieve and save to cache
@@ -161,7 +159,7 @@ class TabFragment : Fragment() {
                 sharedPreference.setTimeSharedPreference()
             }
 
-            handlePermissionResponse(locationServicesHelper.checkForLastLocation(ILocationCallback))
+            handlePermissionResponse(locationServicesHelper.checkForLastLocation(iLocationCallback))
         }
     }
 
@@ -229,6 +227,11 @@ class TabFragment : Fragment() {
     }
 
     private fun showErrorPage() {
+        shimmeringLayoutView?.let{
+            if (it.isAnimationStarted){
+                disableShimmer()
+            }
+        }
         (view as ViewGroup).let { viewgroup ->
             if (errorView == null) {
                 activity?.let { errorView = ErrorView(viewgroup) }
@@ -246,13 +249,6 @@ class TabFragment : Fragment() {
         expandableListView?.apply {
             setOnGroupExpandListener { groupPosition ->
                 val expandableListTitle = viewModel.getNearestExpandableListTitle()
-//                activity?.let {
-//                    Toast.makeText(
-//                        it.applicationContext,
-//                        (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
-//                        Toast.LENGTH_SHORT
-//                    ).show()
-//                }
                 expandedGrouplistView.add(groupPosition)
                 //don't allow refresh if cell is expanding
                 allowRefresh = false
@@ -262,14 +258,6 @@ class TabFragment : Fragment() {
                 )
             }
             setOnGroupCollapseListener { groupPosition ->
-                val expandableListTitle = viewModel.getNearestExpandableListTitle()
-//                activity?.let {
-//                    Toast.makeText(
-//                        it.applicationContext,
-//                        (expandableListTitle as ArrayList<String>)[groupPosition] + " List Collapsed.",
-//                        Toast.LENGTH_SHORT
-//                    ).show()
-//                }
                 expandedGrouplistView.remove(groupPosition)
             }
             setOnChildClickListener { parent, v, groupPosition, childPosition, id ->
@@ -317,6 +305,7 @@ class TabFragment : Fragment() {
 
     //adapter for 1st screen
     private fun createNearestExpandableListAdapter() {
+        Log.d(TAG,"Receive callback here")
         viewModel.setUpExpandableListAdapter(FragmentType.NEAREST)
         expandableListAdapter = viewModel.getExpandableNearestListAdapter()
         expandableListView?.setAdapter(expandableListAdapter)
@@ -324,11 +313,9 @@ class TabFragment : Fragment() {
 
     private fun loadComponents(location: Location?) {
         location?.let {
-            //TODO set status message according to values of location
             (requireActivity() as ILocationCallback).updateOnResult(location, StatusEnum.Success)
             var tempLatitude: Double
             var tempLongitude: Double
-            //TODO remove mocked location
             location.let {
                 it.latitude.let { latitude ->
                     tempLatitude = latitude
@@ -445,7 +432,7 @@ class TabFragment : Fragment() {
                 setNavigationToExternalIntent()
                 handlePermissionResponse(
                     locationServicesHelper.checkForLastLocation(
-                        ILocationCallback
+                        iLocationCallback
                     )
                 )
             }
@@ -481,9 +468,8 @@ class TabFragment : Fragment() {
         if (isPermissionDialogActive) {
             return
         }
-        val cancellable: Boolean = numberOfTries <= 1
         AlertDialogView(this.requireContext()).showDialog(
-            cancellable,
+            true,
             dialogCallback
         )
         isPermissionDialogActive = true

@@ -7,8 +7,3 @@ enum class StatusEnum{
     NoPermission,
     ReloadAll
 }
-
-enum class PermissionEnum{
-    Basic,
-    Advanced
-}

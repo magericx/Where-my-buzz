@@ -4,16 +4,14 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.FragmentActivity
-import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.BusApplication
 import com.example.wheremybuzz.R
 import com.google.android.material.button.MaterialButton
-import java.lang.ref.WeakReference
 
 class ErrorView(view: ViewGroup){
 
     //var mActivity: WeakReference<FragmentActivity>? = null
-    var mContext:Context = MyApplication.instance.applicationContext
+    var mContext:Context = BusApplication.instance.applicationContext
     private val container : ViewGroup = view
     lateinit var errorButton: MaterialButton
     private var parentView: View? = null

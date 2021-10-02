@@ -9,7 +9,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.location.LocationManagerCompat
-import com.example.wheremybuzz.MyApplication
+import com.example.wheremybuzz.BusApplication
 import com.example.wheremybuzz.model.StatusEnum
 import com.google.android.gms.location.LocationServices
 import java.lang.ref.WeakReference
@@ -27,8 +27,8 @@ class LocationServicesHelper(activity: Activity) {
 
     init {
         mActivityRef = WeakReference(activity)
-        executorService2 = MyApplication.poolThread2
-        applicationContext = MyApplication.instance.applicationContext
+        executorService2 = BusApplication.poolThread2
+        applicationContext = BusApplication.instance.applicationContext
     }
 
     private val locationServices by lazy {
