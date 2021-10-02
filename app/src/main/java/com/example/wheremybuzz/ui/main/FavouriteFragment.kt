@@ -302,9 +302,11 @@ class FavouriteFragment : Fragment() {
 
     override fun onPause() {
         Log.d(TAG, "onPause is called")
-        if (swipeContainer.isRefreshing){
-            swipeContainer.isRefreshing = false
-            allowRefresh = true
+        if (::swipeContainer.isInitialized){
+            if (swipeContainer.isRefreshing){
+                swipeContainer.isRefreshing = false
+                allowRefresh = true
+            }
         }
         viewModel.destroyDisposable()
         super.onPause()
