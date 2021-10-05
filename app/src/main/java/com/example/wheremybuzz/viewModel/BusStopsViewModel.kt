@@ -154,15 +154,11 @@ class BusStopsViewModel @Inject constructor(
                         }
                         //TODO add edge case where there can be 2 bus stops with the same name but different busCode
                     }
-                    //remove all busStops that does not exists in the new returned list from server
-                    val hashmapIterator = expandableNearestListDetail.keys.iterator()
-                    while (hashmapIterator.hasNext()) {
-                        val key = hashmapIterator.next()
-                        if (!tempBusStopCodeList.contains(key)) {
-                            Log.d(TAG, "Remove old fields from hashmap now $key")
-                            hashmapIterator.remove()
-                        }
+                    val filteredHashMap =  expandableNearestListDetail.filterKeys { keys ->
+                        tempBusStopCodeList.contains(keys)
                     }
+                    expandableNearestListDetail = ConcurrentHashMap(filteredHashMap)
+
                     BusApplication.mainThreadHandler.post {
                         nearestBusStopsGeoListObservable.value = StatusEnum.ReloadAll
                         setupNearestExpandableListTitle()

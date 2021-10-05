@@ -17,8 +17,8 @@ class BusApplication : Application(), Application.ActivityLifecycleCallbacks {
         super.onCreate()
         registerActivityLifecycleCallbacks(this)
         instance = this
-        poolThread = Executors.newFixedThreadPool(4)
-        poolThread2 = Executors.newFixedThreadPool(6)
+        poolThread = Executors.newFixedThreadPool(2)
+        poolThread2 = Executors.newFixedThreadPool(4)
         mainThreadHandler = HandlerCompat.createAsync(Looper.getMainLooper())
     }
     companion object {
