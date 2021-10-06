@@ -120,42 +120,42 @@ class BusStopsViewModel @Inject constructor(
                     longitude = location.lng
                 )
             ) {
-                if (!it.BusStopMetaList.isNullOrEmpty()) {
-                    val tempBusStopCodeList: MutableList<String> = mutableListOf()
-                    val nearestBusStopsList = it.BusStopMetaList
-                    Log.d(TAG, "Retrieved bus stop list is ${it.BusStopMetaList}")
-                    for (i in nearestBusStopsList.indices) {
-                        val tempBusStopName = nearestBusStopsList[i]!!.busStopName
+                val listInnerBusStopMeta: List<InnerBusStopMeta?>? = it.BusStopMetaList
+                if (!listInnerBusStopMeta.isNullOrEmpty()) {
+                    //get a new list with all the busStopName here
+                    val needToAddList: List<String> =
+                        listInnerBusStopMeta.map { innerBusStopMeta -> innerBusStopMeta!!.busStopName }
+                            .toList()
+
+                    //filter out all the new stops that needs to be added in
+                    (listInnerBusStopMeta.filter { innerBusStopMeta ->
+                        !expandableNearestListDetail.containsKey(innerBusStopMeta!!.busStopName)
+                    } as MutableList<InnerBusStopMeta?>).forEach { item ->
                         val busStopCode = getBusStopCodeFromCache(
                             busStopCodeTempCache,
-                            tempBusStopName,
-                            nearestBusStopsList[i]!!.latitude,
-                            nearestBusStopsList[i]!!.longitude
-                        ) ?: continue
-                        val geoLocation = GeoLocation(
-                            nearestBusStopsList[i]!!.latitude,
-                            nearestBusStopsList[i]!!.longitude
+                            item!!.busStopName,
+                            item.latitude,
+                            item.longitude
                         )
-                        //add into temp list here
-                        tempBusStopCodeList.add(tempBusStopName)
-
-                        //check and add busStops into hashmap if does not exists previously
-                        if (!expandableNearestListDetail.containsKey(tempBusStopName)) {
+                        busStopCode?.let {
                             val busStopArrayList: MutableList<StoredBusMeta> =
-                                mutableListOf(StoredBusMeta(busStopCode, geoLocation, null))
-                            Log.d(
-                                TAG,
-                                "Adding new fields into hashmap now $busStopArrayList of bus stop name ${tempBusStopName}"
-                            )
+                                mutableListOf(
+                                    StoredBusMeta(
+                                        busStopCode,
+                                        GeoLocation(item.latitude, item.longitude),
+                                        null
+                                    )
+                                )
                             setExpandableNearestListDetail(
-                                tempBusStopName,
+                                item.busStopName,
                                 busStopArrayList
                             )
                         }
-                        //TODO add edge case where there can be 2 bus stops with the same name but different busCode
                     }
-                    val filteredHashMap =  expandableNearestListDetail.filterKeys { keys ->
-                        tempBusStopCodeList.contains(keys)
+                    //TODO add edge case where there can be 2 bus stops with the same name but different busCode
+                    //Remove entries that is not in the new list
+                    val filteredHashMap = expandableNearestListDetail.filterKeys { keys ->
+                        needToAddList.contains(keys)
                     }
                     expandableNearestListDetail = ConcurrentHashMap(filteredHashMap)
 
