@@ -338,7 +338,7 @@ class TabFragment : Fragment() {
         Log.d(TAG, "Call nearest bus stop API ")
         // Update the list when the data changes
         viewModel.getNearestBusStopsGeoListObservable(location)
-            ?.observe(viewLifecycleOwner,
+            .observe(viewLifecycleOwner,
                 Observer<StatusEnum> { status ->
                     if (status != null) {
                         activity?.let {
