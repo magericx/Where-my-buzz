@@ -55,13 +55,16 @@ class MainActivity : AppCompatActivity(), ILocationCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         viewPager = findViewById<View>(R.id.viewpager) as ViewPager
-        viewPager!!.addOnPageChangeListener(onPageChangeListener)
-        setupToolBar()
         viewPageAdapter = ViewPagerAdapter(supportFragmentManager)
-        viewPager!!.adapter = viewPageAdapter
+        viewPager?.apply{
+            addOnPageChangeListener(onPageChangeListener)
+            adapter = viewPageAdapter
+        }
+        setupToolBar()
         tabLayout = findViewById<View>(R.id.tabs) as TabLayout
-        tabLayout!!.setupWithViewPager(viewPager)
-
+        tabLayout?.apply{
+            setupWithViewPager(viewPager)
+        }
         newMapFragment = MapsFragment()
         supportFragmentManager.beginTransaction().apply {
             add(R.id.fragment_map_container, newMapFragment!!)
