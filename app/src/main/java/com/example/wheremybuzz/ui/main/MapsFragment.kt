@@ -92,12 +92,6 @@ class MapsFragment : Fragment(), OnMapReadyCallback, ILocationCallback {
         location?.let {
             val currentLocation = LatLng(location.latitude, location.longitude)
             updateMarkerLocation(currentLocation)
-//            activity?.let {
-//                Toast.makeText(
-//                    it.applicationContext, "Received location here in mapFragment",
-//                    Toast.LENGTH_SHORT
-//                ).show()
-//            }
         }
     }
 
@@ -129,7 +123,6 @@ class MapsFragment : Fragment(), OnMapReadyCallback, ILocationCallback {
             override fun onMarkerDragEnd(marker: Marker) {
                 updateCameraView(marker.position)
                 val location = com.example.wheremybuzz.model.Location(marker.position.latitude,marker.position.longitude)
-                //(requireActivity() as LocationListener).updateOnResult(location)
                 viewModel.updateExpandableNearestListDetailNewLocation(location)
             }
         })

@@ -3,9 +3,9 @@ package com.example.wheremybuzz.ui.main
 import android.location.Location
 import android.os.Bundle
 import android.view.View
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.fragment.app.FragmentTransaction
 import androidx.viewpager.widget.ViewPager
 import com.example.wheremybuzz.R
 import com.example.wheremybuzz.model.StatusEnum
@@ -19,25 +19,54 @@ class MainActivity : AppCompatActivity(), ILocationCallback {
     private var tabLayout: TabLayout? = null
     private var viewPager: ViewPager? = null
     private var viewPageAdapter: ViewPagerAdapter? = null
+    private var newMapFragment: MapsFragment? = null
 
     companion object {
         const val TAG = "MainActivity"
+    }
+
+    private val onPageChangeListener = object : ViewPager.OnPageChangeListener {
+        override fun onPageScrolled(
+            position: Int,
+            positionOffset: Float,
+            positionOffsetPixels: Int
+        ) {
+        }
+
+        override fun onPageSelected(position: Int) {
+            val rootView = window.decorView.rootView
+            val view = rootView.findViewById<FrameLayout>(R.id.fragment_map_container) ?: return
+            when (position) {
+                //hide mapView according to the fragment type
+                0 -> {
+                    if (view.visibility == View.GONE) view.visibility = View.VISIBLE
+                }
+                1 -> {
+                    if (view.visibility == View.VISIBLE) view.visibility = View.GONE
+                }
+            }
+        }
+
+        override fun onPageScrollStateChanged(state: Int) {
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         viewPager = findViewById<View>(R.id.viewpager) as ViewPager
+        viewPager!!.addOnPageChangeListener(onPageChangeListener)
         setupToolBar()
         viewPageAdapter = ViewPagerAdapter(supportFragmentManager)
         viewPager!!.adapter = viewPageAdapter
         tabLayout = findViewById<View>(R.id.tabs) as TabLayout
         tabLayout!!.setupWithViewPager(viewPager)
 
-        val fragmentTransaction: FragmentTransaction = supportFragmentManager.beginTransaction()
-        val newMapFragment = MapsFragment()
-        fragmentTransaction.add(R.id.fragment_map_container, newMapFragment)
-        fragmentTransaction.commit()
+        newMapFragment = MapsFragment()
+        supportFragmentManager.beginTransaction().apply {
+            add(R.id.fragment_map_container, newMapFragment!!)
+            commit()
+        }
     }
 
     private fun setupToolBar() {
@@ -58,6 +87,7 @@ class MainActivity : AppCompatActivity(), ILocationCallback {
         viewPager = null
         toolbar = null
         viewPageAdapter = null
+        newMapFragment = null
     }
 
     override fun updateOnResult(location: Location?, statusEnum: StatusEnum) {
@@ -65,7 +95,6 @@ class MainActivity : AppCompatActivity(), ILocationCallback {
             supportFragmentManager.findFragmentById(R.id.fragment_map_container) as MapsFragment
         mapFragment.updateOnResult(location = location, statusEnum = statusEnum)
     }
-
 
 
 }

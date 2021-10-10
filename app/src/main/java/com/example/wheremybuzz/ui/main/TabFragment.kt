@@ -34,7 +34,7 @@ import com.example.wheremybuzz.utils.helper.sharedpreference.SharedPreferenceMan
 import com.example.wheremybuzz.utils.helper.time.TimeUtil
 import com.example.wheremybuzz.view.AlertDialogView
 import com.example.wheremybuzz.view.DialogListener
-import com.example.wheremybuzz.view.ErrorView
+import com.example.wheremybuzz.view.error.ErrorView
 import com.example.wheremybuzz.viewModel.BusStopsViewModel
 import com.facebook.shimmer.ShimmerFrameLayout
 import dagger.hilt.android.AndroidEntryPoint

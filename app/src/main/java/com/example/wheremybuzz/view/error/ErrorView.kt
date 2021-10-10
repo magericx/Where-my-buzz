@@ -1,4 +1,4 @@
-package com.example.wheremybuzz.view
+package com.example.wheremybuzz.view.error
 
 import android.content.Context
 import android.view.LayoutInflater
