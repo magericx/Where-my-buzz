@@ -72,11 +72,11 @@ class BusStopsViewModel @Inject constructor(
     }
 
     private fun setInitialExpandableFavouriteListDetail(mapList: Map<String, String>) {
-        mapList.keys.forEach { key ->
+        mapList.forEach { (key, value) ->
             val staticBusMeta =
                 StoredBusMeta(key, GeoLocation(1.0, 1.0), null)
             val staticListBusMeta: MutableList<StoredBusMeta> = mutableListOf(staticBusMeta)
-            setExpandableFavouriteListDetail(key, staticListBusMeta)
+            setExpandableFavouriteListDetail(value, staticListBusMeta)
         }
     }
 
